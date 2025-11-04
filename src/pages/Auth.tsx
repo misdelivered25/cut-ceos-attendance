@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ClipboardCheck } from "lucide-react";
+import logo from "@/assets/cut-ceos-logo.png";
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -66,14 +66,14 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-            <ClipboardCheck className="h-6 w-6 text-primary-foreground" />
+        <CardHeader className="space-y-4">
+          <div className="flex justify-center">
+            <img src={logo} alt="CUT CEOS" className="h-24 w-24 object-contain" />
           </div>
-          <CardTitle className="text-2xl font-bold">Attendance System</CardTitle>
-          <CardDescription>Sign in to manage your attendance sessions</CardDescription>
+          <CardTitle className="text-2xl font-bold text-center">CUT CEOS Attendance</CardTitle>
+          <CardDescription className="text-center">Sign in to manage your attendance sessions</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

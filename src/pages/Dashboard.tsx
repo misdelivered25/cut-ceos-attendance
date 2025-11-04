@@ -1,24 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut, QrCode } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
+import logo from "@/assets/cut-ceos-logo.png";
 
 const Dashboard = () => {
   const { signOut, user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary">
-      <header className="border-b bg-card/50 backdrop-blur-sm">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
+      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <QrCode className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={logo} alt="CUT CEOS" className="h-12 w-12 object-contain" />
             <div>
-              <h1 className="text-xl font-bold">Attendance System</h1>
+              <h1 className="text-xl font-bold">CUT CEOS Attendance</h1>
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>

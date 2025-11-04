@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { CheckCircle2, ClipboardCheck, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { z } from "zod";
+import logo from "@/assets/cut-ceos-logo.png";
 
 const attendanceSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
@@ -74,7 +75,7 @@ const Scan = () => {
 
   if (sessionLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -82,9 +83,12 @@ const Scan = () => {
 
   if (!session) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center">
+            <img src={logo} alt="CUT CEOS" className="mx-auto h-20 w-20 object-contain mb-4" />
+          </CardHeader>
+          <CardContent className="text-center">
             <p className="text-lg font-medium text-destructive">Invalid or expired QR code</p>
           </CardContent>
         </Card>
@@ -94,9 +98,12 @@ const Scan = () => {
 
   if (!session.is_active) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center">
+            <img src={logo} alt="CUT CEOS" className="mx-auto h-20 w-20 object-contain mb-4" />
+          </CardHeader>
+          <CardContent className="text-center">
             <p className="text-lg font-medium">This session has been closed</p>
             <p className="mt-2 text-sm text-muted-foreground">Attendance is no longer being accepted</p>
           </CardContent>
@@ -107,11 +114,14 @@ const Scan = () => {
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
         <Card className="w-full max-w-md text-center shadow-xl">
           <CardContent className="pt-12 pb-12">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
-              <CheckCircle2 className="h-12 w-12 text-success" />
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center">
+              <img src={logo} alt="CUT CEOS" className="h-full w-full object-contain" />
+            </div>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+              <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
             <h2 className="mb-2 text-2xl font-bold">Attendance Recorded!</h2>
             <p className="text-muted-foreground">
@@ -124,11 +134,11 @@ const Scan = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-secondary p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
       <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-            <ClipboardCheck className="h-6 w-6 text-primary-foreground" />
+        <CardHeader className="text-center space-y-4">
+          <div className="flex justify-center">
+            <img src={logo} alt="CUT CEOS" className="h-20 w-20 object-contain" />
           </div>
           <CardTitle className="text-2xl">{session.title}</CardTitle>
           <CardDescription>Please fill in your details to mark attendance</CardDescription>
