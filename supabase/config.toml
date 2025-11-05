@@ -1,1 +1,4 @@
 project_id = "ftzyfdfpyztvgpqqupyu"
+
+[functions.mark-attendance]
+verify_jwt = false

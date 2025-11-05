@@ -41,10 +41,16 @@ export const CreateSessionDialog = ({ open, onOpenChange }: CreateSessionDialogP
 
     setLoading(true);
 
+    // Set end_time to 2 hours from now
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // Add 2 hours
+
     const { error } = await supabase.from("sessions").insert({
       title: title.trim(),
       qr_token: generateToken(),
       created_by: user?.id,
+      start_time: startTime.toISOString(),
+      end_time: endTime.toISOString(),
     });
 
     setLoading(false);

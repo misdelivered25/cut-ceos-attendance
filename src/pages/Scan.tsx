@@ -45,17 +45,21 @@ const Scan = () => {
         throw new Error(validation.error.errors[0].message);
       }
 
-      const { error } = await supabase.from("attendees").insert({
-        session_id: session?.id,
-        name: data.name,
-        phone: data.phone,
+      // Call edge function to mark attendance with IP capture
+      const { data: result, error } = await supabase.functions.invoke('mark-attendance', {
+        body: {
+          session_id: session?.id,
+          name: data.name,
+          phone: data.phone,
+        },
       });
 
       if (error) {
-        if (error.code === "23505") {
-          throw new Error("You have already marked attendance for this session");
-        }
-        throw error;
+        throw new Error(error.message || "Failed to mark attendance");
+      }
+
+      if (result?.error) {
+        throw new Error(result.error);
       }
     },
     onSuccess: () => {
@@ -96,7 +100,10 @@ const Scan = () => {
     );
   }
 
-  if (!session.is_active) {
+  // Check if session is inactive or expired (past end_time)
+  const isExpired = session.end_time && new Date() > new Date(session.end_time);
+  
+  if (!session.is_active || isExpired) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
         <Card className="w-full max-w-md shadow-xl">
@@ -104,8 +111,12 @@ const Scan = () => {
             <img src={logo} alt="CUT CEOS" className="mx-auto h-20 w-20 object-contain mb-4" />
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-lg font-medium">This session has been closed</p>
-            <p className="mt-2 text-sm text-muted-foreground">Attendance is no longer being accepted</p>
+            <p className="text-lg font-medium">This session has {isExpired ? "expired" : "been closed"}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {isExpired 
+                ? "This session expired after 2 hours. Attendance is no longer being accepted." 
+                : "Attendance is no longer being accepted"}
+            </p>
           </CardContent>
         </Card>
       </div>
