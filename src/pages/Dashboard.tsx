@@ -5,13 +5,14 @@ import { Plus, LogOut } from "lucide-react";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import logo from "@/assets/cut-ceos-logo.png";
+import Footer from "@/components/Footer";
 
 const Dashboard = () => {
   const { signOut, user } = useAuth();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] flex flex-col">
       <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
@@ -28,7 +29,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 flex-1">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold">Your Sessions</h2>
@@ -44,6 +45,7 @@ const Dashboard = () => {
       </main>
 
       <CreateSessionDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <Footer />
     </div>
   );
 };
