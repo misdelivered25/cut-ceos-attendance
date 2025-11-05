@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
-import { Plus, LogOut } from "lucide-react";
+import { Plus, LogOut, Home } from "lucide-react";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import logo from "@/assets/cut-ceos-logo.png";
@@ -9,6 +10,7 @@ import Footer from "@/components/Footer";
 
 const Dashboard = () => {
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
@@ -22,10 +24,16 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
-          <Button onClick={signOut} variant="outline" size="sm">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => navigate("/")} variant="ghost" size="sm">
+              <Home className="mr-2 h-4 w-4" />
+              Home
+            </Button>
+            <Button onClick={signOut} variant="outline" size="sm">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { Home } from "lucide-react";
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
 
@@ -68,6 +69,14 @@ const Auth = () => {
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
+        <div className="container mx-auto flex h-16 items-center px-4">
+          <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">
+            <Home className="h-5 w-5" />
+            Back to Home
+          </Button>
+        </div>
+      </header>
       <div className="flex flex-1 items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardHeader className="space-y-4">
