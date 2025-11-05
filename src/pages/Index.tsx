@@ -20,7 +20,7 @@ const Index = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="CUT CEOS" className="h-10 w-10 object-contain" />
             <span className="text-xl font-bold">CUT CEOS Attendance</span>
           </div>

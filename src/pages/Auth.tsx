@@ -80,7 +80,7 @@ const Auth = () => {
       <div className="flex flex-1 items-center justify-center p-4">
         <Card className="w-full max-w-md shadow-xl">
           <CardHeader className="space-y-4">
-            <div className="flex justify-center">
+            <div className="flex justify-center cursor-pointer" onClick={() => navigate("/")}>
               <img src={logo} alt="CUT CEOS" className="h-24 w-24 object-contain" />
             </div>
             <CardTitle className="text-2xl font-bold text-center">CUT CEOS Attendance</CardTitle>

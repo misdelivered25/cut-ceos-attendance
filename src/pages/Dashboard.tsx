@@ -17,7 +17,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] flex flex-col">
       <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="CUT CEOS" className="h-12 w-12 object-contain" />
             <div>
               <h1 className="text-xl font-bold">CUT CEOS Attendance</h1>
