@@ -5,7 +5,6 @@ import { QrCode, Clock, Shield, Smartphone, Mail, Phone, MapPin, CheckCircle2 } 
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
-
 const Index = () => {
   const navigate = useNavigate();
   const hero = useScrollAnimation(0.1);
@@ -14,9 +13,7 @@ const Index = () => {
   const about = useScrollAnimation(0.1);
   const contact = useScrollAnimation(0.1);
   const cta = useScrollAnimation(0.1);
-
-  return (
-    <div className="flex min-h-screen flex-col bg-mesh-gradient">
+  return <div className="flex min-h-screen flex-col bg-mesh-gradient">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -52,8 +49,10 @@ const Index = () => {
               Start Free Trial
             </Button>
             <Button size="lg" variant="outline" className="text-lg" onClick={() => {
-              document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-            }}>
+            document.getElementById('contact')?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}>
               Contact Us
             </Button>
           </div>
@@ -207,9 +206,7 @@ const Index = () => {
                 <Phone className="mx-auto mb-2 h-10 w-10 text-primary" />
                 <CardTitle>Phone</CardTitle>
                 <CardDescription>
-                  <a href="tel:+263712345678" className="hover:text-primary">
-                    +263 71 234 5678
-                  </a>
+                  <a href="tel:+263712345678" className="hover:text-primary">+263 785 693 657</a>
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -235,20 +232,13 @@ const Index = () => {
           <p className="mb-8 text-lg opacity-90">
             Join the movement towards paperless, efficient attendance tracking
           </p>
-          <Button
-            size="lg"
-            variant="secondary"
-            className="text-lg"
-            onClick={() => navigate("/auth")}
-          >
+          <Button size="lg" variant="secondary" className="text-lg" onClick={() => navigate("/auth")}>
             Get Started Now
           </Button>
         </div>
       </section>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
