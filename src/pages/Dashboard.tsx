@@ -14,7 +14,7 @@ const Dashboard = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] flex flex-col">
+    <div className="min-h-screen bg-dots flex flex-col">
       <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>

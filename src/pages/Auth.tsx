@@ -68,7 +68,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
+    <div className="flex min-h-screen flex-col bg-geometric">
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center px-4">
           <Button variant="ghost" onClick={() => navigate("/")} className="gap-2">

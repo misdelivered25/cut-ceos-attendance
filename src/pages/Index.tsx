@@ -16,7 +16,7 @@ const Index = () => {
   const cta = useScrollAnimation(0.1);
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="flex min-h-screen flex-col bg-mesh-gradient">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
