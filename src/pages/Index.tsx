@@ -4,9 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { QrCode, Clock, Shield, Smartphone, Mail, Phone, MapPin, CheckCircle2 } from "lucide-react";
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
+import { useScrollAnimation } from "@/hooks/use-scroll-animation";
 
 const Index = () => {
   const navigate = useNavigate();
+  const hero = useScrollAnimation(0.1);
+  const features = useScrollAnimation(0.1);
+  const howItWorks = useScrollAnimation(0.1);
+  const about = useScrollAnimation(0.1);
+  const contact = useScrollAnimation(0.1);
+  const cta = useScrollAnimation(0.1);
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
@@ -27,7 +34,7 @@ const Index = () => {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
+      <section ref={hero.ref} className={`container mx-auto px-4 py-20 md:py-32 transition-all duration-1000 ${hero.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-8 flex justify-center">
             <img src={logo} alt="CUT CEOS" className="h-32 w-32 object-contain md:h-40 md:w-40" />
@@ -54,7 +61,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section ref={features.ref} className={`container mx-auto px-4 py-20 transition-all duration-1000 delay-200 ${features.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">Why Choose Our System?</h2>
           <p className="text-lg text-muted-foreground">
@@ -102,7 +109,7 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="bg-muted/30 py-20">
+      <section ref={howItWorks.ref} className={`bg-muted/30 py-20 transition-all duration-1000 delay-300 ${howItWorks.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">How It Works</h2>
@@ -143,7 +150,7 @@ const Index = () => {
       </section>
 
       {/* About Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section ref={about.ref} className={`container mx-auto px-4 py-20 transition-all duration-1000 delay-200 ${about.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="mx-auto max-w-4xl">
           <Card className="border-2">
             <CardHeader>
@@ -175,7 +182,7 @@ const Index = () => {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="bg-muted/30 py-20">
+      <section ref={contact.ref} id="contact" className={`bg-muted/30 py-20 transition-all duration-1000 delay-300 ${contact.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="container mx-auto px-4">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold md:text-4xl">Get In Touch</h2>
@@ -220,7 +227,7 @@ const Index = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20">
+      <section ref={cta.ref} className={`container mx-auto px-4 py-20 transition-all duration-1000 delay-200 ${cta.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="mx-auto max-w-3xl rounded-2xl bg-primary p-8 text-center text-primary-foreground md:p-12">
           <h2 className="mb-4 text-3xl font-bold md:text-4xl">
             Ready to Modernize Your Attendance?
