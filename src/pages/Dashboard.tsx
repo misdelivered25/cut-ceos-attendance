@@ -7,6 +7,7 @@ import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Dashboard = () => {
   const { signOut, user } = useAuth();
@@ -25,6 +26,7 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button onClick={() => navigate("/")} variant="ghost" size="sm">
               <Home className="mr-2 h-4 w-4" />
               Home

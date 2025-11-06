@@ -5,6 +5,7 @@ import { QrCode, Clock, Shield, Smartphone, Mail, Phone, MapPin, CheckCircle2 } 
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
 import { useScrollAnimation } from "@/hooks/use-scroll-animation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 const Index = () => {
   const navigate = useNavigate();
   const hero = useScrollAnimation(0.1);
@@ -21,7 +22,8 @@ const Index = () => {
             <img src={logo} alt="CUT CEOS" className="h-10 w-10 object-contain" />
             <span className="text-xl font-bold">CUT CEOS Attendance</span>
           </div>
-          <div className="flex gap-3">
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Button variant="ghost" onClick={() => navigate("/auth")}>
               Sign In
             </Button>
