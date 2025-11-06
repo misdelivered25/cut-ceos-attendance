@@ -3,7 +3,7 @@ import tatendaLogo from "@/assets/tatenda-logo.png";
 
 const Footer = () => {
   return (
-    <footer className="border-t bg-card/50 backdrop-blur-sm mt-auto">
+    <footer className="border-t bg-ambient/60 backdrop-blur-md mt-auto">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col items-center gap-6 text-center">
           {/* Logos */}

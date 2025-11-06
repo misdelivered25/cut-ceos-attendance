@@ -15,7 +15,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-dots flex flex-col">
-      <header className="border-b bg-card/80 backdrop-blur-sm shadow-sm">
+      <header className="border-b bg-ambient/70 backdrop-blur-md shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="CUT CEOS" className="h-12 w-12 object-contain" />

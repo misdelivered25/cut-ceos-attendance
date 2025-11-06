@@ -15,7 +15,7 @@ const Index = () => {
   const cta = useScrollAnimation(0.1);
   return <div className="flex min-h-screen flex-col bg-mesh-gradient">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-lg">
+      <header className="sticky top-0 z-50 border-b bg-ambient/70 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="CUT CEOS" className="h-10 w-10 object-contain" />
