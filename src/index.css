@@ -8,92 +8,92 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 240 10% 96%;
-    --foreground: 222 47% 11%;
+    --background: 220 30% 97%;
+    --foreground: 220 40% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 40% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 220 40% 10%;
 
-    --primary: 222 47% 11%;
+    --primary: 195 100% 45%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 222 47% 20%;
+    --primary-hover: 195 100% 35%;
 
-    --secondary: 240 10% 92%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 280 60% 60%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 90%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 220 20% 92%;
+    --muted-foreground: 220 15% 45%;
 
-    --accent: 222 47% 11%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 170 100% 50%;
+    --accent-foreground: 220 40% 10%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 240 10% 88%;
-    --input: 240 10% 88%;
-    --ring: 222 47% 11%;
+    --border: 220 25% 88%;
+    --input: 220 25% 88%;
+    --ring: 195 100% 45%;
 
     --radius: 0.75rem;
 
-    --success: 142 76% 36%;
+    --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(222 47% 11%), hsl(222 47% 20%));
-    --gradient-hero: linear-gradient(135deg, hsl(240 10% 98%) 0%, hsl(240 10% 92%) 100%);
-    --gradient-subtle: radial-gradient(circle at top right, hsl(240 10% 94%), hsl(240 10% 96%));
+    --gradient-primary: linear-gradient(135deg, hsl(195 100% 45%), hsl(280 60% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 40% 98%) 0%, hsl(195 80% 95%) 100%);
+    --gradient-subtle: radial-gradient(circle at top right, hsl(195 60% 96%), hsl(220 30% 97%));
     
-    --ambient: 240 15% 93%;
-    --ambient-foreground: 222 47% 11%;
+    --ambient: 195 40% 95%;
+    --ambient-foreground: 220 40% 10%;
     
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.15);
-    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.2);
+    --shadow-sm: 0 1px 2px 0 hsl(195 100% 45% / 0.08);
+    --shadow-md: 0 4px 6px -1px hsl(195 100% 45% / 0.15);
+    --shadow-lg: 0 10px 15px -3px hsl(195 100% 45% / 0.2);
+    --shadow-xl: 0 20px 25px -5px hsl(195 100% 45% / 0.25);
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    --background: 220 50% 8%;
+    --foreground: 195 60% 95%;
 
-    --card: 222 40% 15%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 45% 12%;
+    --card-foreground: 195 60% 95%;
 
-    --popover: 222 40% 15%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 45% 12%;
+    --popover-foreground: 195 60% 95%;
 
-    --primary: 0 0% 100%;
-    --primary-foreground: 222 47% 11%;
-    --primary-hover: 0 0% 95%;
+    --primary: 195 100% 50%;
+    --primary-foreground: 220 50% 8%;
+    --primary-hover: 195 100% 60%;
 
-    --secondary: 222 40% 20%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 280 60% 55%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 40% 18%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 40% 15%;
+    --muted-foreground: 220 20% 60%;
 
-    --accent: 0 0% 100%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 170 100% 50%;
+    --accent-foreground: 220 50% 8%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 222 40% 20%;
-    --input: 222 40% 20%;
-    --ring: 0 0% 100%;
+    --border: 220 40% 18%;
+    --input: 220 40% 18%;
+    --ring: 195 100% 50%;
     
-    --success: 142 76% 36%;
+    --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 100%), hsl(0 0% 95%));
-    --gradient-hero: linear-gradient(135deg, hsl(222 47% 11%) 0%, hsl(222 40% 15%) 100%);
-    --gradient-subtle: radial-gradient(circle at top right, hsl(222 40% 13%), hsl(222 47% 11%));
+    --gradient-primary: linear-gradient(135deg, hsl(195 100% 50%), hsl(280 60% 55%));
+    --gradient-hero: linear-gradient(135deg, hsl(220 50% 8%) 0%, hsl(220 45% 12%) 100%);
+    --gradient-subtle: radial-gradient(circle at top right, hsl(220 45% 10%), hsl(220 50% 8%));
     
-    --ambient: 222 42% 16%;
-    --ambient-foreground: 210 40% 98%;
+    --ambient: 220 45% 12%;
+    --ambient-foreground: 195 60% 95%;
   }
 }
 
@@ -101,10 +101,10 @@ All colors MUST be HSL.
   /* Animated mesh gradient background */
   .bg-mesh-gradient {
     background: 
-      radial-gradient(at 0% 0%, hsl(222 47% 95%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsl(240 10% 94%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsl(222 47% 96%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(240 10% 95%) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsl(195 80% 90%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsl(280 40% 92%) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsl(170 60% 88%) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(195 60% 93%) 0px, transparent 50%),
       hsl(var(--background));
     background-size: 400% 400%;
     animation: mesh-move 15s ease infinite;
@@ -112,10 +112,10 @@ All colors MUST be HSL.
 
   .dark .bg-mesh-gradient {
     background: 
-      radial-gradient(at 0% 0%, hsl(222 47% 15%) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsl(222 40% 18%) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsl(222 47% 13%) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsl(222 40% 16%) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsl(195 100% 20%) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsl(280 60% 25%) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsl(170 80% 18%) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsl(195 80% 15%) 0px, transparent 50%),
       hsl(var(--background));
     background-size: 400% 400%;
     animation: mesh-move 15s ease infinite;
