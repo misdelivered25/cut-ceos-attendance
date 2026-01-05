@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -16,9 +17,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Download, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Download, FileText, Loader2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
 
 interface ViewAttendeesDialogProps {
@@ -34,7 +47,10 @@ export const ViewAttendeesDialog = ({
   sessionId,
   sessionTitle,
 }: ViewAttendeesDialogProps) => {
-  const { data: attendees, isLoading } = useQuery({
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
+  const { data: attendees, isLoading, refetch } = useQuery({
     queryKey: ["attendees", sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -47,18 +63,20 @@ export const ViewAttendeesDialog = ({
       return data;
     },
     enabled: open,
+    refetchInterval: open ? 5000 : false, // Live refresh every 5 seconds when dialog is open
   });
 
-  const handleExport = () => {
+  const handleExportExcel = () => {
     if (!attendees || attendees.length === 0) {
       toast.error("No data to export");
       return;
     }
 
-    const exportData = attendees.map((attendee) => ({
+    const exportData = attendees.map((attendee, index) => ({
+      "#": index + 1,
       Name: attendee.name,
       Phone: attendee.phone,
-      "Scan Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
+      "Submission Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
       "IP Address": attendee.ip_address || "N/A",
     }));
 
@@ -68,63 +86,167 @@ export const ViewAttendeesDialog = ({
 
     const fileName = `attendance-${sessionTitle.replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.xlsx`;
     XLSX.writeFile(wb, fileName);
-    toast.success("Attendance exported successfully!");
+    toast.success("Exported to Excel successfully!");
+  };
+
+  const handleExportPDF = () => {
+    if (!attendees || attendees.length === 0) {
+      toast.error("No data to export");
+      return;
+    }
+
+    const doc = new jsPDF();
+    
+    // Add header
+    doc.setFontSize(18);
+    doc.text("CUT CEOS Attendance Report", 14, 22);
+    doc.setFontSize(12);
+    doc.text(`Session: ${sessionTitle}`, 14, 32);
+    doc.text(`Date: ${format(new Date(), "MMMM d, yyyy")}`, 14, 40);
+    doc.text(`Total Attendees: ${attendees.length}`, 14, 48);
+
+    // Add table
+    const tableData = attendees.map((attendee, index) => [
+      index + 1,
+      attendee.name,
+      attendee.phone,
+      format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
+    ]);
+
+    autoTable(doc, {
+      startY: 55,
+      head: [["#", "Name", "Phone", "Submission Time"]],
+      body: tableData,
+      theme: "striped",
+      headStyles: { fillColor: [59, 130, 246] },
+    });
+
+    const fileName = `attendance-${sessionTitle.replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
+    doc.save(fileName);
+    toast.success("Exported to PDF successfully!");
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    const { error } = await supabase
+      .from("attendees")
+      .delete()
+      .eq("id", deleteId);
+
+    if (error) {
+      toast.error("Failed to delete entry");
+      console.error(error);
+    } else {
+      toast.success("Entry deleted");
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ["attendees-count", sessionId] });
+    }
+    setDeleteId(null);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>{sessionTitle}</DialogTitle>
-          <DialogDescription>
-            View and export attendance records
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="flex justify-between">
-            <p className="text-sm text-muted-foreground">
-              Total: {attendees?.length || 0} attendees
-            </p>
-            <Button onClick={handleExport} disabled={!attendees || attendees.length === 0}>
-              <Download className="mr-2 h-4 w-4" />
-              Export to Excel
-            </Button>
-          </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>{sessionTitle}</DialogTitle>
+            <DialogDescription>
+              View and manage attendance records (auto-refreshes every 5 seconds)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">
+                Total: <span className="font-semibold text-foreground">{attendees?.length || 0}</span> attendees
+              </p>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleExportExcel} 
+                  disabled={!attendees || attendees.length === 0}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Excel
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleExportPDF} 
+                  disabled={!attendees || attendees.length === 0}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  PDF
+                </Button>
+              </div>
+            </div>
 
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : attendees && attendees.length > 0 ? (
-            <div className="max-h-96 overflow-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Scan Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {attendees.map((attendee) => (
-                    <TableRow key={attendee.id}>
-                      <TableCell className="font-medium">{attendee.name}</TableCell>
-                      <TableCell>{attendee.phone}</TableCell>
-                      <TableCell>
-                        {format(new Date(attendee.scanned_at), "MMM d, h:mm a")}
-                      </TableCell>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : attendees && attendees.length > 0 ? (
+              <div className="flex-1 overflow-auto rounded-md border">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead className="w-12">#</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Submission Time</TableHead>
+                      <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              No attendance records yet
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+                  </TableHeader>
+                  <TableBody>
+                    {attendees.map((attendee, index) => (
+                      <TableRow key={attendee.id}>
+                        <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                        <TableCell className="font-medium">{attendee.name}</TableCell>
+                        <TableCell>{attendee.phone}</TableCell>
+                        <TableCell>
+                          {format(new Date(attendee.scanned_at), "MMM d, h:mm a")}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteId(attendee.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                No attendance records yet
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this attendance record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

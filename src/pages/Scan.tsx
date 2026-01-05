@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, Clock, Users } from "lucide-react";
 import { z } from "zod";
 import logo from "@/assets/cut-ceos-logo.png";
 
@@ -45,7 +46,6 @@ const Scan = () => {
         throw new Error(validation.error.errors[0].message);
       }
 
-      // Call edge function to mark attendance with IP capture
       const { data: result, error } = await supabase.functions.invoke('mark-attendance', {
         body: {
           session_id: session?.id,
@@ -100,8 +100,11 @@ const Scan = () => {
     );
   }
 
-  // Check if session is inactive or expired (past end_time)
-  const isExpired = session.end_time && new Date() > new Date(session.end_time);
+  // Check if session is closed or expired based on time_limit_enabled
+  const now = new Date();
+  const isTimeLimitEnabled = session.time_limit_enabled;
+  const isExpired = isTimeLimitEnabled && session.end_time && now > new Date(session.end_time);
+  const hasNotStarted = isTimeLimitEnabled && session.start_time && now < new Date(session.start_time);
   
   if (!session.is_active || isExpired) {
     return (
@@ -114,8 +117,26 @@ const Scan = () => {
             <p className="text-lg font-medium">This session has {isExpired ? "expired" : "been closed"}</p>
             <p className="mt-2 text-sm text-muted-foreground">
               {isExpired 
-                ? "This session expired after 2 hours. Attendance is no longer being accepted." 
+                ? "The time limit for this session has passed. Attendance is no longer being accepted." 
                 : "Attendance is no longer being accepted"}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (hasNotStarted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
+        <Card className="w-full max-w-md shadow-xl">
+          <CardHeader className="text-center">
+            <img src={logo} alt="CUT CEOS" className="mx-auto h-20 w-20 object-contain mb-4" />
+          </CardHeader>
+          <CardContent className="text-center">
+            <p className="text-lg font-medium">Session hasn't started yet</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Please wait for the session to begin.
             </p>
           </CardContent>
         </Card>
@@ -144,6 +165,8 @@ const Scan = () => {
     );
   }
 
+  const sessionMode = session.mode as "timed" | "open";
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))] p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -151,7 +174,24 @@ const Scan = () => {
           <div className="flex justify-center">
             <img src={logo} alt="CUT CEOS" className="h-20 w-20 object-contain" />
           </div>
-          <CardTitle className="text-2xl">{session.title}</CardTitle>
+          <div>
+            <CardTitle className="text-2xl">{session.title}</CardTitle>
+            <div className="flex justify-center mt-2">
+              <Badge variant={sessionMode === "timed" ? "default" : "secondary"} className="gap-1">
+                {sessionMode === "timed" ? (
+                  <>
+                    <Clock className="h-3 w-3" />
+                    Timed Check-in
+                  </>
+                ) : (
+                  <>
+                    <Users className="h-3 w-3" />
+                    Open Check-in
+                  </>
+                )}
+              </Badge>
+            </div>
+          </div>
           <CardDescription>Please fill in your details to mark attendance</CardDescription>
         </CardHeader>
         <CardContent>
@@ -173,7 +213,7 @@ const Scan = () => {
               <Input
                 id="phone"
                 type="tel"
-                placeholder="+1234567890"
+                placeholder="+263771234567"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
