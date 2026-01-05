@@ -56,8 +56,10 @@ export type Database = {
           end_time: string | null
           id: string
           is_active: boolean
+          mode: Database["public"]["Enums"]["session_mode"]
           qr_token: string
           start_time: string
+          time_limit_enabled: boolean
           title: string
         }
         Insert: {
@@ -66,8 +68,10 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_active?: boolean
+          mode?: Database["public"]["Enums"]["session_mode"]
           qr_token: string
           start_time?: string
+          time_limit_enabled?: boolean
           title: string
         }
         Update: {
@@ -76,8 +80,10 @@ export type Database = {
           end_time?: string | null
           id?: string
           is_active?: boolean
+          mode?: Database["public"]["Enums"]["session_mode"]
           qr_token?: string
           start_time?: string
+          time_limit_enabled?: boolean
           title?: string
         }
         Relationships: []
@@ -90,7 +96,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      session_mode: "timed" | "open"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -217,6 +223,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      session_mode: ["timed", "open"],
+    },
   },
 } as const
