@@ -49,6 +49,57 @@ export type Database = {
           },
         ]
       }
+      members: {
+        Row: {
+          created_at: string
+          created_by: string
+          department: string | null
+          email: string | null
+          full_name: string
+          id: string
+          is_active: boolean
+          joined_at: string
+          member_id: string
+          phone: string
+          profile_picture_url: string | null
+          program: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          department?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          member_id: string
+          phone: string
+          profile_picture_url?: string | null
+          program?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          department?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          member_id?: string
+          phone?: string
+          profile_picture_url?: string | null
+          program?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sessions: {
         Row: {
           created_at: string
@@ -57,6 +108,9 @@ export type Database = {
           id: string
           is_active: boolean
           mode: Database["public"]["Enums"]["session_mode"]
+          notification_email: string | null
+          notification_sent: boolean
+          notification_threshold: number | null
           qr_token: string
           start_time: string
           time_limit_enabled: boolean
@@ -69,6 +123,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           mode?: Database["public"]["Enums"]["session_mode"]
+          notification_email?: string | null
+          notification_sent?: boolean
+          notification_threshold?: number | null
           qr_token: string
           start_time?: string
           time_limit_enabled?: boolean
@@ -81,6 +138,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           mode?: Database["public"]["Enums"]["session_mode"]
+          notification_email?: string | null
+          notification_sent?: boolean
+          notification_threshold?: number | null
           qr_token?: string
           start_time?: string
           time_limit_enabled?: boolean
@@ -93,7 +153,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_member_id: { Args: never; Returns: string }
     }
     Enums: {
       session_mode: "timed" | "open"
