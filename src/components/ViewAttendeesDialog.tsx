@@ -27,7 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, FileText, Loader2, Trash2 } from "lucide-react";
+import { Download, FileText, Loader2, Trash2, UserCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -55,7 +56,10 @@ export const ViewAttendeesDialog = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendees")
-        .select("*")
+        .select(`
+          *,
+          member:members(id, member_id, full_name)
+        `)
         .eq("session_id", sessionId)
         .order("scanned_at", { ascending: false });
 
@@ -76,6 +80,7 @@ export const ViewAttendeesDialog = ({
       "#": index + 1,
       Name: attendee.name,
       Phone: attendee.phone,
+      "Member ID": attendee.member?.member_id || "N/A",
       "Submission Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
       "IP Address": attendee.ip_address || "N/A",
     }));
@@ -110,12 +115,13 @@ export const ViewAttendeesDialog = ({
       index + 1,
       attendee.name,
       attendee.phone,
+      attendee.member?.member_id || "N/A",
       format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
     ]);
 
     autoTable(doc, {
       startY: 55,
-      head: [["#", "Name", "Phone", "Submission Time"]],
+      head: [["#", "Name", "Phone", "Member ID", "Submission Time"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
@@ -157,9 +163,14 @@ export const ViewAttendeesDialog = ({
           </DialogHeader>
           <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">
-                Total: <span className="font-semibold text-foreground">{attendees?.length || 0}</span> attendees
-              </p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>
+                  Total: <span className="font-semibold text-foreground">{attendees?.length || 0}</span> attendees
+                </span>
+                <span>
+                  Members: <span className="font-semibold text-foreground">{attendees?.filter(a => a.member_id).length || 0}</span>
+                </span>
+              </div>
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
@@ -194,6 +205,7 @@ export const ViewAttendeesDialog = ({
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Phone</TableHead>
+                      <TableHead>Member</TableHead>
                       <TableHead>Submission Time</TableHead>
                       <TableHead className="w-16">Actions</TableHead>
                     </TableRow>
@@ -204,6 +216,16 @@ export const ViewAttendeesDialog = ({
                         <TableCell className="text-muted-foreground">{index + 1}</TableCell>
                         <TableCell className="font-medium">{attendee.name}</TableCell>
                         <TableCell>{attendee.phone}</TableCell>
+                        <TableCell>
+                          {attendee.member ? (
+                            <Badge variant="secondary" className="gap-1">
+                              <UserCheck className="h-3 w-3" />
+                              {attendee.member.member_id}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">—</span>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {format(new Date(attendee.scanned_at), "MMM d, h:mm a")}
                         </TableCell>

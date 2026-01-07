@@ -48,14 +48,27 @@ serve(async (req) => {
 
     console.log('Marking attendance with IP:', ip_address);
 
+    // Look up member by phone number to link attendance
+    const trimmedPhone = phone.trim();
+    const { data: member } = await supabase
+      .from('members')
+      .select('id')
+      .eq('phone', trimmedPhone)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    const member_id = member?.id || null;
+    console.log('Member lookup result:', member_id ? `Found member ${member_id}` : 'No matching member');
+
     // Insert attendance record
     const { error } = await supabase
       .from('attendees')
       .insert({
         session_id,
         name: name.trim(),
-        phone: phone.trim(),
+        phone: trimmedPhone,
         ip_address,
+        member_id,
       });
 
     if (error) {
