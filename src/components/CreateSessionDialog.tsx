@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { Clock, Users } from "lucide-react";
+import { Clock, Users, Bell } from "lucide-react";
 
 interface CreateSessionDialogProps {
   open: boolean;
@@ -28,6 +28,9 @@ export const CreateSessionDialog = ({ open, onOpenChange }: CreateSessionDialogP
   const [mode, setMode] = useState<"timed" | "open">("timed");
   const [timeLimitEnabled, setTimeLimitEnabled] = useState(true);
   const [durationHours, setDurationHours] = useState(2);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [notificationThreshold, setNotificationThreshold] = useState(10);
+  const [notificationEmail, setNotificationEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -61,6 +64,8 @@ export const CreateSessionDialog = ({ open, onOpenChange }: CreateSessionDialogP
       end_time: endTime?.toISOString() || null,
       mode: mode,
       time_limit_enabled: timeLimitEnabled,
+      notification_threshold: notificationsEnabled ? notificationThreshold : null,
+      notification_email: notificationsEnabled ? notificationEmail.trim() || null : null,
     });
 
     setLoading(false);
@@ -74,6 +79,9 @@ export const CreateSessionDialog = ({ open, onOpenChange }: CreateSessionDialogP
       setMode("timed");
       setTimeLimitEnabled(true);
       setDurationHours(2);
+      setNotificationsEnabled(false);
+      setNotificationThreshold(10);
+      setNotificationEmail("");
       onOpenChange(false);
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
     }
@@ -158,6 +166,55 @@ export const CreateSessionDialog = ({ open, onOpenChange }: CreateSessionDialogP
                     value={durationHours}
                     onChange={(e) => setDurationHours(parseFloat(e.target.value) || 2)}
                   />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3 rounded-lg border p-4 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="notifications" className="font-medium flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-primary" />
+                    Email Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Get notified when attendance reaches a threshold
+                  </p>
+                </div>
+                <Switch
+                  id="notifications"
+                  checked={notificationsEnabled}
+                  onCheckedChange={setNotificationsEnabled}
+                />
+              </div>
+
+              {notificationsEnabled && (
+                <div className="space-y-4 pt-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="threshold">Attendance Threshold</Label>
+                    <Input
+                      id="threshold"
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={notificationThreshold}
+                      onChange={(e) => setNotificationThreshold(parseInt(e.target.value) || 10)}
+                      placeholder="e.g., 50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Send notification when this many attendees check in
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Notification Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={notificationEmail}
+                      onChange={(e) => setNotificationEmail(e.target.value)}
+                      placeholder="admin@example.com"
+                    />
+                  </div>
                 </div>
               )}
             </div>
