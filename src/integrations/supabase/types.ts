@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           id: string
           ip_address: string | null
+          member_id: string | null
           name: string
           phone: string
           scanned_at: string
@@ -26,6 +27,7 @@ export type Database = {
         Insert: {
           id?: string
           ip_address?: string | null
+          member_id?: string | null
           name: string
           phone: string
           scanned_at?: string
@@ -34,12 +36,20 @@ export type Database = {
         Update: {
           id?: string
           ip_address?: string | null
+          member_id?: string | null
           name?: string
           phone?: string
           scanned_at?: string
           session_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "attendees_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "attendees_session_id_fkey"
             columns: ["session_id"]
