@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { QrCode, Users, Eye, Clock, Trash2 } from "lucide-react";
+import { QrCode, Users, Eye, Clock, Trash2, Pencil, Bell } from "lucide-react";
 import { format } from "date-fns";
 import { QRCodeDialog } from "./QRCodeDialog";
 import { ViewAttendeesDialog } from "./ViewAttendeesDialog";
+import { EditSessionDialog } from "./EditSessionDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeAttendees } from "@/hooks/useRealtimeAttendees";
@@ -30,6 +31,8 @@ interface Session {
   is_active: boolean;
   mode: string;
   time_limit_enabled: boolean;
+  notification_threshold: number | null;
+  notification_email: string | null;
 }
 
 interface SessionCardProps {
@@ -40,6 +43,7 @@ export const SessionCard = ({ session }: SessionCardProps) => {
   const [showQR, setShowQR] = useState(false);
   const [showAttendees, setShowAttendees] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: attendeesCount } = useQuery({
@@ -111,6 +115,12 @@ export const SessionCard = ({ session }: SessionCardProps) => {
             {!session.time_limit_enabled && (
               <Badge variant="outline" className="text-xs">No Time Limit</Badge>
             )}
+            {session.notification_threshold && (
+              <Badge variant="outline" className="text-xs gap-1">
+                <Bell className="h-3 w-3" />
+                {session.notification_threshold}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             {format(new Date(session.start_time), "MMM d, yyyy 'at' h:mm a")}
@@ -143,6 +153,13 @@ export const SessionCard = ({ session }: SessionCardProps) => {
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setShowEdit(true)}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               className="text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={() => setShowDeleteConfirm(true)}
             >
@@ -162,6 +179,11 @@ export const SessionCard = ({ session }: SessionCardProps) => {
         onOpenChange={setShowAttendees}
         sessionId={session.id}
         sessionTitle={session.title}
+      />
+      <EditSessionDialog
+        open={showEdit}
+        onOpenChange={setShowEdit}
+        session={session}
       />
 
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
