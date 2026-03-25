@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, Home, Users, Calendar, BarChart3 } from "lucide-react";
+import { Plus, LogOut, Home, Users, Calendar, BarChart3, TrendingUp } from "lucide-react";
+import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import { MembersPage } from "@/components/MembersPage";
@@ -56,6 +57,10 @@ const Dashboard = () => {
                 <Users className="h-4 w-4" />
                 Members
               </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
             </TabsList>
             {activeTab === "sessions" && (
               <div className="flex gap-2">
@@ -77,6 +82,10 @@ const Dashboard = () => {
 
           <TabsContent value="members" className="mt-0">
             <MembersPage />
+          </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
+            <AnalyticsTab />
           </TabsContent>
         </Tabs>
       </main>
