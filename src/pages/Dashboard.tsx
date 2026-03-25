@@ -83,6 +83,10 @@ const Dashboard = () => {
           <TabsContent value="members" className="mt-0">
             <MembersPage />
           </TabsContent>
+
+          <TabsContent value="analytics" className="mt-0">
+            <AnalyticsTab />
+          </TabsContent>
         </Tabs>
       </main>
 
