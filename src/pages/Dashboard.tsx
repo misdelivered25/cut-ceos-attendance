@@ -58,10 +58,16 @@ const Dashboard = () => {
               </TabsTrigger>
             </TabsList>
             {activeTab === "sessions" && (
-              <Button onClick={() => setIsCreateOpen(true)} size="lg" className="shadow-lg">
-                <Plus className="mr-2 h-5 w-5" />
-                New Session
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsCompareOpen(true)} variant="outline" size="lg">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Compare
+                </Button>
+                <Button onClick={() => setIsCreateOpen(true)} size="lg" className="shadow-lg">
+                  <Plus className="mr-2 h-5 w-5" />
+                  New Session
+                </Button>
+              </div>
             )}
           </div>
 
