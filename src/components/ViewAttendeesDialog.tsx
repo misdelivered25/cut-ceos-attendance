@@ -34,6 +34,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
+import imiLogoSrc from "@/assets/imi-logo.png";
 
 interface ViewAttendeesDialogProps {
   open: boolean;
