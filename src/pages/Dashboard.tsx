@@ -82,6 +82,7 @@ const Dashboard = () => {
       </main>
 
       <CreateSessionDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <CrossSessionComparisonDialog open={isCompareOpen} onOpenChange={setIsCompareOpen} />
       <Footer />
     </div>
   );
