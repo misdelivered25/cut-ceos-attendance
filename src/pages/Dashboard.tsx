@@ -3,10 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, Home, Users, Calendar } from "lucide-react";
+import { Plus, LogOut, Home, Users, Calendar, BarChart3 } from "lucide-react";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import { MembersPage } from "@/components/MembersPage";
+import { CrossSessionComparisonDialog } from "@/components/CrossSessionComparisonDialog";
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -15,6 +16,7 @@ const Dashboard = () => {
   const { signOut, user } = useAuth();
   const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("sessions");
 
   return (
@@ -56,10 +58,16 @@ const Dashboard = () => {
               </TabsTrigger>
             </TabsList>
             {activeTab === "sessions" && (
-              <Button onClick={() => setIsCreateOpen(true)} size="lg" className="shadow-lg">
-                <Plus className="mr-2 h-5 w-5" />
-                New Session
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => setIsCompareOpen(true)} variant="outline" size="lg">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  Compare
+                </Button>
+                <Button onClick={() => setIsCreateOpen(true)} size="lg" className="shadow-lg">
+                  <Plus className="mr-2 h-5 w-5" />
+                  New Session
+                </Button>
+              </div>
             )}
           </div>
 
@@ -74,6 +82,7 @@ const Dashboard = () => {
       </main>
 
       <CreateSessionDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      <CrossSessionComparisonDialog open={isCompareOpen} onOpenChange={setIsCompareOpen} />
       <Footer />
     </div>
   );

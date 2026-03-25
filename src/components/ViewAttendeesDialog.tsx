@@ -34,6 +34,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { toast } from "sonner";
+import imiLogoSrc from "@/assets/imi-logo.png";
 
 interface ViewAttendeesDialogProps {
   open: boolean;
@@ -94,23 +95,54 @@ export const ViewAttendeesDialog = ({
     toast.success("Exported to Excel successfully!");
   };
 
-  const handleExportPDF = () => {
+  const loadImiLogo = (): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      };
+      img.onerror = () => resolve("");
+      img.src = imiLogoSrc;
+    });
+  };
+
+  const handleExportPDF = async () => {
     if (!attendees || attendees.length === 0) {
       toast.error("No data to export");
       return;
     }
 
     const doc = new jsPDF();
-    
-    // Add header
-    doc.setFontSize(18);
-    doc.text("CUT CEOS Attendance Report", 14, 22);
-    doc.setFontSize(12);
-    doc.text(`Session: ${sessionTitle}`, 14, 32);
-    doc.text(`Date: ${format(new Date(), "MMMM d, yyyy")}`, 14, 40);
-    doc.text(`Total Attendees: ${attendees.length}`, 14, 48);
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
-    // Add table
+    // Header with logo
+    const logoData = await loadImiLogo();
+    if (logoData) {
+      doc.addImage(logoData, "PNG", 14, 8, 20, 20);
+    }
+    doc.setFontSize(16);
+    doc.text("IMI Technologies", 38, 18);
+    doc.setFontSize(10);
+    doc.text("Inquire . Motivate . Inspire", 38, 24);
+
+    doc.setDrawColor(59, 130, 246);
+    doc.setLineWidth(0.5);
+    doc.line(14, 32, pageWidth - 14, 32);
+
+    doc.setFontSize(14);
+    doc.text("CUT CEOS Attendance Report", 14, 42);
+    doc.setFontSize(10);
+    doc.text(`Session: ${sessionTitle}`, 14, 50);
+    doc.text(`Date: ${format(new Date(), "MMMM d, yyyy")}`, 14, 56);
+    doc.text(`Total Attendees: ${attendees.length}`, 14, 62);
+
     const tableData = attendees.map((attendee, index) => [
       index + 1,
       attendee.name,
@@ -120,12 +152,31 @@ export const ViewAttendeesDialog = ({
     ]);
 
     autoTable(doc, {
-      startY: 55,
+      startY: 68,
       head: [["#", "Name", "Phone", "Member ID", "Submission Time"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
+      margin: { bottom: 30 },
     });
+
+    // Footer on each page
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128, 128, 128);
+      doc.text("Powered by IMI Technologies", 14, pageHeight - 12);
+      doc.text(
+        `© ${new Date().getFullYear()} IMI Technologies. All rights reserved.`,
+        14,
+        pageHeight - 7
+      );
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 7, {
+        align: "right",
+      });
+      doc.setTextColor(0, 0, 0);
+    }
 
     const fileName = `attendance-${sessionTitle.replace(/\s+/g, "-")}-${format(new Date(), "yyyy-MM-dd")}.pdf`;
     doc.save(fileName);
