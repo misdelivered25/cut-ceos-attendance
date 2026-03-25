@@ -288,7 +288,7 @@ export const AnalyticsTab = () => {
           <ChartContainer config={{ attendees: { label: "Attendees", color: "hsl(var(--primary))" } }} className="h-[300px] w-full">
             <BarChart data={sessionComparison} margin={{ top: 5, right: 10, left: -10, bottom: 40 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="name" tick={{ fontSize: 10, angle: -35, textAnchor: "end" }} className="fill-muted-foreground" interval={0} />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} className="fill-muted-foreground" interval={0} />
               <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Bar dataKey="attendees" radius={[4, 4, 0, 0]}>
