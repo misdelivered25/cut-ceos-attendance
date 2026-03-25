@@ -57,6 +57,10 @@ const Dashboard = () => {
                 <Users className="h-4 w-4" />
                 Members
               </TabsTrigger>
+              <TabsTrigger value="analytics" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
             </TabsList>
             {activeTab === "sessions" && (
               <div className="flex gap-2">
