@@ -248,6 +248,10 @@ export const MembersPage = () => {
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
+          </Button>
           <Button onClick={() => setShowAddDialog(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Member
