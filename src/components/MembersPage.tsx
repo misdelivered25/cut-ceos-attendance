@@ -34,8 +34,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download } from "lucide-react";
+import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { ImportMembersDialog } from "./ImportMembersDialog";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 
@@ -61,6 +62,7 @@ export const MembersPage = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -245,6 +247,10 @@ export const MembersPage = () => {
           <Button variant="outline" onClick={handleExport} disabled={!members?.length}>
             <Download className="mr-2 h-4 w-4" />
             Export
+          </Button>
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Import
           </Button>
           <Button onClick={() => setShowAddDialog(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
@@ -490,6 +496,7 @@ export const MembersPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ImportMembersDialog open={showImport} onOpenChange={setShowImport} />
     </div>
   );
 };

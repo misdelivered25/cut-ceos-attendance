@@ -27,9 +27,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, FileText, Loader2, Trash2, UserCheck } from "lucide-react";
+import { Download, FileText, Loader2, Trash2, UserCheck, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { ManualAttendeeDialog } from "./ManualAttendeeDialog";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -50,6 +51,7 @@ export const ViewAttendeesDialog = ({
   sessionTitle,
 }: ViewAttendeesDialogProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: attendees, isLoading, refetch } = useQuery({
@@ -223,6 +225,14 @@ export const ViewAttendeesDialog = ({
                 </span>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => setShowManualEntry(true)}
+                >
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Add
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -320,6 +330,13 @@ export const ViewAttendeesDialog = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ManualAttendeeDialog
+        open={showManualEntry}
+        onOpenChange={setShowManualEntry}
+        sessionId={sessionId}
+        sessionTitle={sessionTitle}
+      />
     </>
   );
 };
