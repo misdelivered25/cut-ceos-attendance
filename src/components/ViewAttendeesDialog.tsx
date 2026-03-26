@@ -330,6 +330,13 @@ export const ViewAttendeesDialog = ({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ManualAttendeeDialog
+        open={showManualEntry}
+        onOpenChange={setShowManualEntry}
+        sessionId={sessionId}
+        sessionTitle={sessionTitle}
+      />
     </>
   );
 };
