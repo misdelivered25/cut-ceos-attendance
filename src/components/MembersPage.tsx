@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -34,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload } from "lucide-react";
+import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload, ToggleLeft, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { ImportMembersDialog } from "./ImportMembersDialog";
 import { format } from "date-fns";
@@ -63,6 +64,12 @@ export const MembersPage = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showImport, setShowImport] = useState(false);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkToggleOpen, setBulkToggleOpen] = useState(false);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -93,6 +100,62 @@ export const MembersPage = () => {
       member.member_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.phone.includes(searchQuery)
   );
+
+  const allFilteredSelected =
+    filteredMembers && filteredMembers.length > 0 && filteredMembers.every((m) => selectedIds.has(m.id));
+
+  const toggleSelectAll = () => {
+    if (!filteredMembers) return;
+    if (allFilteredSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMembers.map((m) => m.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("members").delete().in("id", ids);
+    if (error) {
+      toast.error("Failed to delete members");
+    } else {
+      toast.success(`${ids.length} members deleted`);
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setSelectedIds(new Set());
+    }
+    setBulkLoading(false);
+    setBulkDeleteOpen(false);
+  };
+
+  const handleBulkToggleStatus = async () => {
+    setBulkLoading(true);
+    const ids = Array.from(selectedIds);
+    const selected = members?.filter((m) => ids.includes(m.id)) || [];
+    // Toggle: if majority active → deactivate all, else activate all
+    const majorityActive = selected.filter((m) => m.is_active).length > selected.length / 2;
+    const newStatus = !majorityActive;
+
+    const { error } = await supabase.from("members").update({ is_active: newStatus }).in("id", ids);
+    if (error) {
+      toast.error("Failed to update status");
+    } else {
+      toast.success(`${ids.length} members ${newStatus ? "activated" : "deactivated"}`);
+      queryClient.invalidateQueries({ queryKey: ["members"] });
+      setSelectedIds(new Set());
+    }
+    setBulkLoading(false);
+    setBulkToggleOpen(false);
+  };
 
   const generateMemberId = async (): Promise<string> => {
     const { data, error } = await supabase.rpc("generate_member_id");
@@ -236,6 +299,33 @@ export const MembersPage = () => {
     toast.success("Members exported");
   };
 
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        "Full Name": "John Doe",
+        Phone: "+263771234567",
+        Email: "john@example.com",
+        Program: "Computer Science",
+        Department: "Engineering",
+      },
+      {
+        "Full Name": "Jane Smith",
+        Phone: "+263772345678",
+        Email: "jane@example.com",
+        Program: "Business Administration",
+        Department: "Commerce",
+      },
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(templateData);
+    // Set column widths
+    ws["!cols"] = [{ wch: 20 }, { wch: 18 }, { wch: 25 }, { wch: 22 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Members Template");
+    XLSX.writeFile(wb, "cut-ceos-members-import-template.xlsx");
+    toast.success("Template downloaded");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -243,21 +333,43 @@ export const MembersPage = () => {
           <h2 className="text-3xl font-bold">Members</h2>
           <p className="text-muted-foreground">Manage club members and their profiles</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExport} disabled={!members?.length}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Template
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport} disabled={!members?.length}>
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button variant="outline" onClick={() => setShowImport(true)}>
+          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Import
           </Button>
-          <Button onClick={() => setShowAddDialog(true)}>
+          <Button size="sm" onClick={() => setShowAddDialog(true)}>
             <UserPlus className="mr-2 h-4 w-4" />
             Add Member
           </Button>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/50">
+          <span className="text-sm font-medium">{selectedIds.size} selected</span>
+          <Button variant="outline" size="sm" onClick={() => setBulkToggleOpen(true)}>
+            <ToggleLeft className="mr-2 h-4 w-4" />
+            Toggle Status
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => setBulkDeleteOpen(true)}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+            Clear
+          </Button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -315,6 +427,12 @@ export const MembersPage = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allFilteredSelected}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Member</TableHead>
                   <TableHead>ID</TableHead>
                   <TableHead>Phone</TableHead>
@@ -326,7 +444,13 @@ export const MembersPage = () => {
               </TableHeader>
               <TableBody>
                 {filteredMembers.map((member) => (
-                  <TableRow key={member.id}>
+                  <TableRow key={member.id} data-state={selectedIds.has(member.id) ? "selected" : undefined}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(member.id)}
+                        onCheckedChange={() => toggleSelect(member.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
@@ -496,6 +620,47 @@ export const MembersPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk Delete Confirmation */}
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedIds.size} Members</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedIds.size} selected members? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={bulkLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkLoading ? "Deleting..." : `Delete ${selectedIds.size} Members`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Bulk Toggle Confirmation */}
+      <AlertDialog open={bulkToggleOpen} onOpenChange={setBulkToggleOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Toggle Status for {selectedIds.size} Members</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will toggle the active status for {selectedIds.size} selected members.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkToggleStatus} disabled={bulkLoading}>
+              {bulkLoading ? "Updating..." : "Toggle Status"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <ImportMembersDialog open={showImport} onOpenChange={setShowImport} />
     </div>
   );
