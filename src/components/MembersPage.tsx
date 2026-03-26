@@ -62,6 +62,7 @@ export const MembersPage = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
