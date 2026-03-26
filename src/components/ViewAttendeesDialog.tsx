@@ -51,6 +51,7 @@ export const ViewAttendeesDialog = ({
   sessionTitle,
 }: ViewAttendeesDialogProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showManualEntry, setShowManualEntry] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: attendees, isLoading, refetch } = useQuery({
