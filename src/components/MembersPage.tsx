@@ -34,8 +34,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download } from "lucide-react";
+import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { ImportMembersDialog } from "./ImportMembersDialog";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 
