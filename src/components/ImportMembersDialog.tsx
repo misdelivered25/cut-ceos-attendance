@@ -23,6 +23,10 @@ import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle } from "luc
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Set worker source
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 interface ParsedMember {
   full_name: string;
@@ -39,6 +43,50 @@ interface ImportMembersDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const parsePdfText = (text: string): ParsedMember[] => {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const members: ParsedMember[] = [];
+
+  // Try to detect table-like structure
+  // Look for lines containing phone-number-like patterns
+  const phoneRegex = /(\+?\d[\d\s\-()]{7,})/;
+
+  for (const line of lines) {
+    const phoneMatch = line.match(phoneRegex);
+    if (!phoneMatch) continue;
+
+    const phone = phoneMatch[1].replace(/[\s\-()]/g, "").trim();
+    // Everything before the phone is likely the name
+    const beforePhone = line.substring(0, phoneMatch.index).trim();
+    const afterPhone = line.substring((phoneMatch.index || 0) + phoneMatch[0].length).trim();
+
+    // Try to extract name — skip header rows
+    const name = beforePhone.replace(/^\d+[\.\)]\s*/, "").trim(); // Remove numbering like "1." or "1)"
+    if (!name || name.toLowerCase().includes("name") || name.toLowerCase().includes("phone")) continue;
+
+    // Try to extract email from afterPhone
+    const emailMatch = afterPhone.match(/[\w.\-]+@[\w.\-]+\.\w+/);
+    const email = emailMatch ? emailMatch[0] : "";
+
+    // Remaining text after email could be program/department
+    const remaining = emailMatch
+      ? afterPhone.replace(emailMatch[0], "").trim()
+      : afterPhone;
+    const parts = remaining.split(/[,\t|]+/).map((p) => p.trim()).filter(Boolean);
+
+    members.push({
+      full_name: name,
+      phone,
+      email,
+      program: parts[0] || "",
+      department: parts[1] || "",
+      status: "pending",
+    });
+  }
+
+  return members;
+};
+
 export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -46,64 +94,91 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
   const [parsedData, setParsedData] = useState<ParsedMember[]>([]);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
+  const [parsing, setParsing] = useState(false);
 
   const reset = () => {
     setParsedData([]);
     setImporting(false);
     setImported(false);
+    setParsing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const parseExcelFile = (data: ArrayBuffer) => {
+    const workbook = XLSX.read(new Uint8Array(data), { type: "array" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
+
+    if (rows.length === 0) {
+      toast.error("No data found in file");
+      return [];
+    }
+
+    return rows.map((row) => {
+      const get = (keys: string[]) => {
+        for (const key of keys) {
+          const match = Object.keys(row).find((k) => k.toLowerCase().trim() === key.toLowerCase());
+          if (match && row[match]) return String(row[match]).trim();
+        }
+        return "";
+      };
+
+      return {
+        full_name: get(["full name", "full_name", "name", "fullname"]),
+        phone: get(["phone", "phone number", "phone_number", "tel", "mobile"]),
+        email: get(["email", "email address", "e-mail"]),
+        program: get(["program", "programme", "course"]),
+        department: get(["department", "dept", "faculty"]),
+        status: "pending" as const,
+      };
+    }).filter((m) => m.full_name && m.phone);
+  };
+
+  const parsePdfFile = async (data: ArrayBuffer): Promise<ParsedMember[]> => {
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    let fullText = "";
+
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item: any) => item.str)
+        .join(" ");
+      fullText += pageText + "\n";
+    }
+
+    return parsePdfText(fullText);
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const rows = XLSX.utils.sheet_to_json<Record<string, any>>(sheet);
+    setParsing(true);
 
-        if (rows.length === 0) {
-          toast.error("No data found in file");
-          return;
-        }
+    try {
+      const data = await file.arrayBuffer();
+      let members: ParsedMember[] = [];
 
-        const members: ParsedMember[] = rows.map((row) => {
-          // Flexible column matching (case-insensitive)
-          const get = (keys: string[]) => {
-            for (const key of keys) {
-              const match = Object.keys(row).find((k) => k.toLowerCase().trim() === key.toLowerCase());
-              if (match && row[match]) return String(row[match]).trim();
-            }
-            return "";
-          };
-
-          return {
-            full_name: get(["full name", "full_name", "name", "fullname"]),
-            phone: get(["phone", "phone number", "phone_number", "tel", "mobile"]),
-            email: get(["email", "email address", "e-mail"]),
-            program: get(["program", "programme", "course"]),
-            department: get(["department", "dept", "faculty"]),
-            status: "pending" as const,
-          };
-        }).filter((m) => m.full_name && m.phone);
-
-        if (members.length === 0) {
-          toast.error("No valid members found. Ensure columns include 'Full Name' and 'Phone'.");
-          return;
-        }
-
-        setParsedData(members);
-        setImported(false);
-        toast.success(`${members.length} members parsed from file`);
-      } catch {
-        toast.error("Failed to parse file. Please use a valid Excel or CSV file.");
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        members = await parsePdfFile(data);
+      } else {
+        members = parseExcelFile(data);
       }
-    };
-    reader.readAsArrayBuffer(file);
+
+      if (members.length === 0) {
+        toast.error("No valid members found. Ensure data includes names and phone numbers.");
+        setParsing(false);
+        return;
+      }
+
+      setParsedData(members);
+      setImported(false);
+      toast.success(`${members.length} members parsed from file`);
+    } catch {
+      toast.error("Failed to parse file. Please use a valid Excel, CSV, or PDF file.");
+    }
+    setParsing(false);
   };
 
   const handleImport = async () => {
@@ -115,7 +190,6 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
     for (let i = 0; i < updated.length; i++) {
       const m = updated[i];
       try {
-        // Generate member ID
         const { data: memberId, error: idError } = await supabase.rpc("generate_member_id");
         if (idError) throw idError;
 
@@ -176,30 +250,31 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
             Import Members
           </DialogTitle>
           <DialogDescription>
-            Upload an Excel or CSV file with columns: Full Name, Phone, Email (optional), Program (optional), Department (optional)
+            Upload an Excel, CSV, or PDF file with member data (Full Name and Phone required)
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          {/* File input */}
           <div className="flex items-center gap-3">
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.xls,.csv,.pdf"
               onChange={handleFileChange}
               className="hidden"
             />
-            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing}>
-              <Upload className="mr-2 h-4 w-4" />
-              {parsedData.length > 0 ? "Choose Another File" : "Select File"}
+            <Button variant="outline" onClick={() => fileInputRef.current?.click()} disabled={importing || parsing}>
+              {parsing ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Parsing...</>
+              ) : (
+                <><Upload className="mr-2 h-4 w-4" />{parsedData.length > 0 ? "Choose Another File" : "Select File"}</>
+              )}
             </Button>
             {parsedData.length > 0 && (
               <Badge variant="secondary">{parsedData.length} members found</Badge>
             )}
           </div>
 
-          {/* Preview table */}
           {parsedData.length > 0 && (
             <div className="flex-1 overflow-auto rounded-md border">
               <Table>
