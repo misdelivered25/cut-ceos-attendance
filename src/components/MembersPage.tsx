@@ -496,6 +496,7 @@ export const MembersPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ImportMembersDialog open={showImport} onOpenChange={setShowImport} />
     </div>
   );
 };
