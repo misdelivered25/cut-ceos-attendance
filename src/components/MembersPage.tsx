@@ -457,7 +457,7 @@ export const MembersPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((member) => (
+                {paginatedMembers.map((member) => (
                   <TableRow key={member.id} data-state={selectedIds.has(member.id) ? "selected" : undefined}>
                     <TableCell>
                       <Checkbox
