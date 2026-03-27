@@ -95,6 +95,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const reset = () => {
     setParsedData([]);
