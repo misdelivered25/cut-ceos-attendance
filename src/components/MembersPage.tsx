@@ -102,6 +102,18 @@ export const MembersPage = () => {
       member.phone.includes(searchQuery)
   );
 
+  const totalPages = Math.ceil((filteredMembers?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedMembers = filteredMembers?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
+
   const allFilteredSelected =
     filteredMembers && filteredMembers.length > 0 && filteredMembers.every((m) => selectedIds.has(m.id));
 
