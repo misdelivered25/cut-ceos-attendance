@@ -35,7 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload, ToggleLeft, FileDown } from "lucide-react";
+import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload, ToggleLeft, FileDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { ImportMembersDialog } from "./ImportMembersDialog";
 import { format } from "date-fns";
@@ -58,6 +58,8 @@ export const MembersPage = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 20;
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -100,6 +102,18 @@ export const MembersPage = () => {
       member.member_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.phone.includes(searchQuery)
   );
+
+  const totalPages = Math.ceil((filteredMembers?.length || 0) / ITEMS_PER_PAGE);
+  const paginatedMembers = filteredMembers?.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  // Reset to page 1 when search changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  };
 
   const allFilteredSelected =
     filteredMembers && filteredMembers.length > 0 && filteredMembers.every((m) => selectedIds.has(m.id));
@@ -377,7 +391,7 @@ export const MembersPage = () => {
         <Input
           placeholder="Search by name, ID, or phone..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9"
         />
       </div>
@@ -421,7 +435,7 @@ export const MembersPage = () => {
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      ) : filteredMembers && filteredMembers.length > 0 ? (
+      ) : paginatedMembers && paginatedMembers.length > 0 ? (
         <Card>
           <div className="overflow-x-auto">
             <Table>
@@ -443,7 +457,7 @@ export const MembersPage = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((member) => (
+                {paginatedMembers.map((member) => (
                   <TableRow key={member.id} data-state={selectedIds.has(member.id) ? "selected" : undefined}>
                     <TableCell>
                       <Checkbox
@@ -507,6 +521,36 @@ export const MembersPage = () => {
               </TableBody>
             </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t">
+              <p className="text-sm text-muted-foreground">
+                Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredMembers?.length || 0)} of {filteredMembers?.length || 0}
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
       ) : (
         <Card>

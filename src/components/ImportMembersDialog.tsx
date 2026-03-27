@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
@@ -95,13 +95,63 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
   const [parsing, setParsing] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
 
   const reset = () => {
     setParsedData([]);
     setImporting(false);
     setImported(false);
     setParsing(false);
+    setAnalyzing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAICorrection = async () => {
+    if (parsedData.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const membersToAnalyze = parsedData.map((m) => ({
+        full_name: m.full_name,
+        phone: m.phone,
+        email: m.email,
+        program: m.program,
+        department: m.department,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("analyze-import-data", {
+        body: { members: membersToAnalyze },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const corrected = data.corrected as Array<{
+        full_name: string;
+        phone: string;
+        email: string;
+        program: string;
+        department: string;
+      }>;
+
+      if (corrected && corrected.length === parsedData.length) {
+        setParsedData((prev) =>
+          prev.map((m, i) => ({
+            ...m,
+            full_name: corrected[i].full_name || m.full_name,
+            phone: corrected[i].phone || m.phone,
+            email: corrected[i].email || m.email,
+            program: corrected[i].program || m.program,
+            department: corrected[i].department || m.department,
+          }))
+        );
+        toast.success("AI has analyzed and corrected the data");
+      } else {
+        toast.warning("AI returned unexpected data. Original data preserved.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "AI analysis failed");
+    }
+    setAnalyzing(false);
   };
 
   const parseExcelFile = (data: ArrayBuffer) => {
@@ -271,7 +321,21 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
               )}
             </Button>
             {parsedData.length > 0 && (
-              <Badge variant="secondary">{parsedData.length} members found</Badge>
+              <>
+                <Badge variant="secondary">{parsedData.length} members found</Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAICorrection}
+                  disabled={analyzing || importing || imported}
+                >
+                  {analyzing ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</>
+                  ) : (
+                    <><Sparkles className="mr-2 h-4 w-4" />AI Correct Data</>
+                  )}
+                </Button>
+              </>
             )}
           </div>
 
