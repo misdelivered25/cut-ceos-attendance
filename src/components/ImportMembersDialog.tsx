@@ -321,7 +321,21 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
               )}
             </Button>
             {parsedData.length > 0 && (
-              <Badge variant="secondary">{parsedData.length} members found</Badge>
+              <>
+                <Badge variant="secondary">{parsedData.length} members found</Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAICorrection}
+                  disabled={analyzing || importing || imported}
+                >
+                  {analyzing ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Analyzing...</>
+                  ) : (
+                    <><Sparkles className="mr-2 h-4 w-4" />AI Correct Data</>
+                  )}
+                </Button>
+              </>
             )}
           </div>
 
