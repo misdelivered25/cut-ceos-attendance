@@ -391,7 +391,7 @@ export const MembersPage = () => {
         <Input
           placeholder="Search by name, ID, or phone..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="pl-9"
         />
       </div>
