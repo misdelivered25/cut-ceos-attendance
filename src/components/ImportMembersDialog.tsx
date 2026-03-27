@@ -102,7 +102,56 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
     setImporting(false);
     setImported(false);
     setParsing(false);
+    setAnalyzing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleAICorrection = async () => {
+    if (parsedData.length === 0) return;
+    setAnalyzing(true);
+    try {
+      const membersToAnalyze = parsedData.map((m) => ({
+        full_name: m.full_name,
+        phone: m.phone,
+        email: m.email,
+        program: m.program,
+        department: m.department,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("analyze-import-data", {
+        body: { members: membersToAnalyze },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      const corrected = data.corrected as Array<{
+        full_name: string;
+        phone: string;
+        email: string;
+        program: string;
+        department: string;
+      }>;
+
+      if (corrected && corrected.length === parsedData.length) {
+        setParsedData((prev) =>
+          prev.map((m, i) => ({
+            ...m,
+            full_name: corrected[i].full_name || m.full_name,
+            phone: corrected[i].phone || m.phone,
+            email: corrected[i].email || m.email,
+            program: corrected[i].program || m.program,
+            department: corrected[i].department || m.department,
+          }))
+        );
+        toast.success("AI has analyzed and corrected the data");
+      } else {
+        toast.warning("AI returned unexpected data. Original data preserved.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "AI analysis failed");
+    }
+    setAnalyzing(false);
   };
 
   const parseExcelFile = (data: ArrayBuffer) => {
