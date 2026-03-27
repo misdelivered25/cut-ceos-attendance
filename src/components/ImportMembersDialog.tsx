@@ -19,16 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle, Sparkles } from "lucide-react";
+import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle, Sparkles, Link } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import * as XLSX from "xlsx";
 import * as pdfjsLib from "pdfjs-dist";
+import { ImportDiffView } from "./ImportDiffView";
 
-// Set worker source
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
-interface ParsedMember {
+export interface ParsedMember {
   full_name: string;
   phone: string;
   email: string;
@@ -43,35 +43,29 @@ interface ImportMembersDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+// Improved PDF parser with multiple strategies
 const parsePdfText = (text: string): ParsedMember[] => {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const members: ParsedMember[] = [];
-
-  // Try to detect table-like structure
-  // Look for lines containing phone-number-like patterns
   const phoneRegex = /(\+?\d[\d\s\-()]{7,})/;
+  const emailRegex = /[\w.\-]+@[\w.\-]+\.\w+/;
 
+  // Strategy 1: Lines with phone numbers
   for (const line of lines) {
     const phoneMatch = line.match(phoneRegex);
     if (!phoneMatch) continue;
 
     const phone = phoneMatch[1].replace(/[\s\-()]/g, "").trim();
-    // Everything before the phone is likely the name
     const beforePhone = line.substring(0, phoneMatch.index).trim();
     const afterPhone = line.substring((phoneMatch.index || 0) + phoneMatch[0].length).trim();
 
-    // Try to extract name — skip header rows
-    const name = beforePhone.replace(/^\d+[\.\)]\s*/, "").trim(); // Remove numbering like "1." or "1)"
+    const name = beforePhone.replace(/^\d+[\.\)]\s*/, "").trim();
     if (!name || name.toLowerCase().includes("name") || name.toLowerCase().includes("phone")) continue;
 
-    // Try to extract email from afterPhone
-    const emailMatch = afterPhone.match(/[\w.\-]+@[\w.\-]+\.\w+/);
+    const emailMatch = afterPhone.match(emailRegex);
     const email = emailMatch ? emailMatch[0] : "";
 
-    // Remaining text after email could be program/department
-    const remaining = emailMatch
-      ? afterPhone.replace(emailMatch[0], "").trim()
-      : afterPhone;
+    const remaining = emailMatch ? afterPhone.replace(emailMatch[0], "").trim() : afterPhone;
     const parts = remaining.split(/[,\t|]+/).map((p) => p.trim()).filter(Boolean);
 
     members.push({
@@ -84,25 +78,117 @@ const parsePdfText = (text: string): ParsedMember[] => {
     });
   }
 
+  // Strategy 2: If no phone-based matches, try tab/comma separated
+  if (members.length === 0) {
+    for (const line of lines) {
+      const parts = line.split(/[\t,|]+/).map((p) => p.trim()).filter(Boolean);
+      if (parts.length < 2) continue;
+
+      // Skip header-like rows
+      if (parts[0].toLowerCase().includes("name") || parts[0].toLowerCase().includes("#")) continue;
+
+      // Remove leading number
+      const name = parts[0].replace(/^\d+[\.\)]\s*/, "").trim();
+      if (!name) continue;
+
+      // Find phone in remaining parts
+      const phoneIdx = parts.findIndex((p, i) => i > 0 && /\d{7,}/.test(p.replace(/[\s\-()]/g, "")));
+      const phone = phoneIdx > 0 ? parts[phoneIdx].replace(/[\s\-()]/g, "") : "";
+      if (!phone) continue;
+
+      const emailIdx = parts.findIndex((p) => emailRegex.test(p));
+      const email = emailIdx > 0 ? parts[emailIdx] : "";
+
+      const usedIdxs = new Set([0, phoneIdx, emailIdx].filter((i) => i >= 0));
+      const extras = parts.filter((_, i) => i > 0 && !usedIdxs.has(i));
+
+      members.push({
+        full_name: name,
+        phone,
+        email,
+        program: extras[0] || "",
+        department: extras[1] || "",
+        status: "pending",
+      });
+    }
+  }
+
   return members;
+};
+
+// Parse CSV text
+const parseCsvText = (text: string): ParsedMember[] => {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/['"]/g, ""));
+
+  const getIdx = (keys: string[]) => {
+    for (const key of keys) {
+      const idx = headers.findIndex((h) => h.includes(key));
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  };
+
+  const nameIdx = getIdx(["full name", "full_name", "name", "fullname"]);
+  const phoneIdx = getIdx(["phone", "tel", "mobile"]);
+  const emailIdx = getIdx(["email", "e-mail"]);
+  const programIdx = getIdx(["program", "programme", "course"]);
+  const deptIdx = getIdx(["department", "dept", "faculty"]);
+
+  if (nameIdx < 0 || phoneIdx < 0) return [];
+
+  return lines.slice(1).map((line) => {
+    // Handle quoted CSV fields
+    const parts: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (const char of line) {
+      if (char === '"') { inQuotes = !inQuotes; continue; }
+      if (char === "," && !inQuotes) { parts.push(current.trim()); current = ""; continue; }
+      current += char;
+    }
+    parts.push(current.trim());
+
+    return {
+      full_name: parts[nameIdx] || "",
+      phone: parts[phoneIdx] || "",
+      email: emailIdx >= 0 ? parts[emailIdx] || "" : "",
+      program: programIdx >= 0 ? parts[programIdx] || "" : "",
+      department: deptIdx >= 0 ? parts[deptIdx] || "" : "",
+      status: "pending" as const,
+    };
+  }).filter((m) => m.full_name && m.phone);
 };
 
 export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [parsedData, setParsedData] = useState<ParsedMember[]>([]);
+  const [originalData, setOriginalData] = useState<ParsedMember[] | null>(null);
+  const [correctedData, setCorrectedData] = useState<ParsedMember[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [fetchingUrl, setFetchingUrl] = useState(false);
 
   const reset = () => {
     setParsedData([]);
+    setOriginalData(null);
+    setCorrectedData(null);
     setImporting(false);
     setImported(false);
     setParsing(false);
     setAnalyzing(false);
+    setShowDiff(false);
+    setShowUrlInput(false);
+    setFetchingUrl(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -134,17 +220,19 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
       }>;
 
       if (corrected && corrected.length === parsedData.length) {
-        setParsedData((prev) =>
-          prev.map((m, i) => ({
-            ...m,
-            full_name: corrected[i].full_name || m.full_name,
-            phone: corrected[i].phone || m.phone,
-            email: corrected[i].email || m.email,
-            program: corrected[i].program || m.program,
-            department: corrected[i].department || m.department,
-          }))
-        );
-        toast.success("AI has analyzed and corrected the data");
+        // Save original for diff view
+        setOriginalData([...parsedData]);
+        const newCorrected = parsedData.map((m, i) => ({
+          ...m,
+          full_name: corrected[i].full_name || m.full_name,
+          phone: corrected[i].phone || m.phone,
+          email: corrected[i].email || m.email,
+          program: corrected[i].program || m.program,
+          department: corrected[i].department || m.department,
+        }));
+        setCorrectedData(newCorrected);
+        setShowDiff(true);
+        toast.success("AI analysis complete — review changes below");
       } else {
         toast.warning("AI returned unexpected data. Original data preserved.");
       }
@@ -152,6 +240,23 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
       toast.error(err.message || "AI analysis failed");
     }
     setAnalyzing(false);
+  };
+
+  const acceptDiff = () => {
+    if (correctedData) {
+      setParsedData(correctedData);
+    }
+    setShowDiff(false);
+    setOriginalData(null);
+    setCorrectedData(null);
+    toast.success("AI corrections applied");
+  };
+
+  const revertDiff = () => {
+    setShowDiff(false);
+    setCorrectedData(null);
+    setOriginalData(null);
+    toast.info("Changes reverted to original data");
   };
 
   const parseExcelFile = (data: ArrayBuffer) => {
@@ -174,11 +279,11 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
       };
 
       return {
-        full_name: get(["full name", "full_name", "name", "fullname"]),
-        phone: get(["phone", "phone number", "phone_number", "tel", "mobile"]),
-        email: get(["email", "email address", "e-mail"]),
-        program: get(["program", "programme", "course"]),
-        department: get(["department", "dept", "faculty"]),
+        full_name: get(["full name", "full_name", "name", "fullname", "student name", "member name"]),
+        phone: get(["phone", "phone number", "phone_number", "tel", "mobile", "cell", "contact"]),
+        email: get(["email", "email address", "e-mail", "mail"]),
+        program: get(["program", "programme", "course", "degree", "major"]),
+        department: get(["department", "dept", "faculty", "school"]),
         status: "pending" as const,
       };
     }).filter((m) => m.full_name && m.phone);
@@ -191,39 +296,47 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      const pageText = content.items
-        .map((item: any) => item.str)
-        .join(" ");
+      const pageText = content.items.map((item: any) => item.str).join(" ");
       fullText += pageText + "\n";
     }
 
     return parsePdfText(fullText);
   };
 
+  const processFileData = async (file: File | Blob, fileName: string) => {
+    const data = await file.arrayBuffer();
+    let members: ParsedMember[] = [];
+    const lowerName = fileName.toLowerCase();
+
+    if (lowerName.endsWith(".pdf")) {
+      members = await parsePdfFile(data);
+    } else if (lowerName.endsWith(".csv") || lowerName.endsWith(".txt")) {
+      const text = new TextDecoder().decode(new Uint8Array(data));
+      members = parseCsvText(text);
+      if (members.length === 0) members = parseExcelFile(data);
+    } else {
+      members = parseExcelFile(data);
+    }
+
+    return members;
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setParsing(true);
-
     try {
-      const data = await file.arrayBuffer();
-      let members: ParsedMember[] = [];
-
-      if (file.name.toLowerCase().endsWith(".pdf")) {
-        members = await parsePdfFile(data);
-      } else {
-        members = parseExcelFile(data);
-      }
-
+      const members = await processFileData(file, file.name);
       if (members.length === 0) {
         toast.error("No valid members found. Ensure data includes names and phone numbers.");
         setParsing(false);
         return;
       }
-
       setParsedData(members);
       setImported(false);
+      setShowDiff(false);
+      setOriginalData(null);
+      setCorrectedData(null);
       toast.success(`${members.length} members parsed from file`);
     } catch {
       toast.error("Failed to parse file. Please use a valid Excel, CSV, or PDF file.");
@@ -231,10 +344,36 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
     setParsing(false);
   };
 
+  const handleUrlImport = async () => {
+    const url = urlInputRef.current?.value?.trim();
+    if (!url) { toast.error("Please enter a URL"); return; }
+
+    setFetchingUrl(true);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch file");
+      const blob = await response.blob();
+      const fileName = url.split("/").pop() || "file.xlsx";
+      const members = await processFileData(blob, fileName);
+      if (members.length === 0) {
+        toast.error("No valid members found in the file from URL.");
+        setFetchingUrl(false);
+        return;
+      }
+      setParsedData(members);
+      setImported(false);
+      setShowDiff(false);
+      setShowUrlInput(false);
+      toast.success(`${members.length} members parsed from URL`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to fetch or parse file from URL");
+    }
+    setFetchingUrl(false);
+  };
+
   const handleImport = async () => {
     if (!user) return;
     setImporting(true);
-
     const updated = [...parsedData];
 
     for (let i = 0; i < updated.length; i++) {
@@ -293,23 +432,23 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5" />
             Import Members
           </DialogTitle>
           <DialogDescription>
-            Upload an Excel, CSV, or PDF file with member data (Full Name and Phone required)
+            Upload Excel, CSV, or PDF files with member data (Full Name and Phone required). You can also import from a URL.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls,.csv,.pdf"
+              accept=".xlsx,.xls,.csv,.pdf,.txt"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -320,7 +459,15 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
                 <><Upload className="mr-2 h-4 w-4" />{parsedData.length > 0 ? "Choose Another File" : "Select File"}</>
               )}
             </Button>
-            {parsedData.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              disabled={importing || parsing}
+            >
+              <Link className="mr-2 h-4 w-4" />
+              Import from URL
+            </Button>
+            {parsedData.length > 0 && !showDiff && (
               <>
                 <Badge variant="secondary">{parsedData.length} members found</Badge>
                 <Button
@@ -339,7 +486,33 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
             )}
           </div>
 
-          {parsedData.length > 0 && (
+          {/* URL input */}
+          {showUrlInput && (
+            <div className="flex items-center gap-2">
+              <input
+                ref={urlInputRef}
+                type="url"
+                placeholder="https://example.com/members.xlsx"
+                className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
+              />
+              <Button size="sm" onClick={handleUrlImport} disabled={fetchingUrl}>
+                {fetchingUrl ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch"}
+              </Button>
+            </div>
+          )}
+
+          {/* Diff view */}
+          {showDiff && originalData && correctedData && (
+            <ImportDiffView
+              original={originalData}
+              corrected={correctedData}
+              onAccept={acceptDiff}
+              onRevert={revertDiff}
+            />
+          )}
+
+          {/* Regular table view */}
+          {parsedData.length > 0 && !showDiff && (
             <div className="flex-1 overflow-auto rounded-md border">
               <Table>
                 <TableHeader className="sticky top-0 bg-background">
@@ -349,6 +522,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
                     <TableHead>Phone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Program</TableHead>
+                    <TableHead>Dept</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -360,6 +534,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
                       <TableCell>{m.phone}</TableCell>
                       <TableCell className="text-sm">{m.email || "—"}</TableCell>
                       <TableCell className="text-sm">{m.program || "—"}</TableCell>
+                      <TableCell className="text-sm">{m.department || "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
                           {statusIcon(m.status)}
@@ -380,7 +555,7 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
           <Button variant="outline" onClick={() => handleClose(false)}>
             {imported ? "Close" : "Cancel"}
           </Button>
-          {parsedData.length > 0 && !imported && (
+          {parsedData.length > 0 && !imported && !showDiff && (
             <Button onClick={handleImport} disabled={importing}>
               {importing ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Importing...</>
