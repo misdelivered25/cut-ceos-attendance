@@ -273,6 +273,40 @@ export const MinutesTab = () => {
           <CardDescription>Record the chair, venue, date, and notes.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-4 rounded-lg border border-dashed p-3 bg-muted/30">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Import previous minutes
+              </div>
+              <span className="text-xs text-muted-foreground">PDF, DOCX, TXT</span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Upload a document and AI will extract chair, venue, date, and minutes for review.
+            </p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={extracting}
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full"
+            >
+              {extracting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="mr-2 h-4 w-4" />
+              )}
+              {extracting ? "Analyzing document…" : "Upload & analyze"}
+            </Button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="chairperson">Chair of the Meeting</Label>
