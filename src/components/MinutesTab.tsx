@@ -72,6 +72,9 @@ export const MinutesTab = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [filterSessionId, setFilterSessionId] = useState<string>(ALL_SESSIONS);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState({
     chairperson: "",
     venue: "",
