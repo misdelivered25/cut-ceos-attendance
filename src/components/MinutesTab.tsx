@@ -173,10 +173,94 @@ export const MinutesTab = () => {
   };
 
   const filteredRecords = useMemo(() => {
-    if (filterSessionId === ALL_SESSIONS) return records;
-    if (filterSessionId === NO_SESSION) return records.filter((r) => !r.session_id);
-    return records.filter((r) => r.session_id === filterSessionId);
-  }, [records, filterSessionId]);
+    let list = records;
+    if (filterSessionId === NO_SESSION) list = list.filter((r) => !r.session_id);
+    else if (filterSessionId !== ALL_SESSIONS)
+      list = list.filter((r) => r.session_id === filterSessionId);
+
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (r) =>
+          r.chairperson.toLowerCase().includes(q) ||
+          r.venue.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [records, filterSessionId, searchQuery]);
+
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    const name = file.name.toLowerCase();
+    if (name.endsWith(".txt") || name.endsWith(".md") || file.type.startsWith("text/")) {
+      return await file.text();
+    }
+    if (name.endsWith(".docx")) {
+      const buf = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer: buf });
+      return result.value;
+    }
+    if (name.endsWith(".pdf") || file.type === "application/pdf") {
+      const pdfjs: any = await import("pdfjs-dist/build/pdf.mjs");
+      // @ts-ignore worker URL via Vite
+      const worker = await import("pdfjs-dist/build/pdf.worker.mjs?url");
+      pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
+      const buf = await file.arrayBuffer();
+      const doc = await pdfjs.getDocument({ data: buf }).promise;
+      let out = "";
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        out += content.items.map((it: any) => it.str).join(" ") + "\n\n";
+      }
+      return out;
+    }
+    throw new Error("Unsupported file type. Use PDF, DOCX, TXT, or MD.");
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Max 15 MB.", variant: "destructive" });
+      return;
+    }
+
+    setExtracting(true);
+    try {
+      const text = await extractTextFromFile(file);
+      if (!text || text.trim().length < 10) {
+        throw new Error("No readable text found in document.");
+      }
+
+      const { data, error } = await supabase.functions.invoke("extract-minutes", {
+        body: { text, filename: file.name },
+      });
+
+      if (error) throw error;
+      const extracted = (data as any)?.data;
+      if (!extracted) throw new Error("AI returned no data.");
+
+      setForm((f) => ({
+        ...f,
+        chairperson: extracted.chairperson || f.chairperson,
+        venue: extracted.venue || f.venue,
+        meeting_date: extracted.meeting_date || f.meeting_date,
+        minutes: extracted.minutes || f.minutes,
+      }));
+
+      toast({
+        title: "Document analyzed",
+        description: extracted.summary || "Form pre-filled. Review and save.",
+      });
+    } catch (err: any) {
+      const msg = err?.message || "Failed to process document.";
+      toast({ title: "Upload failed", description: msg, variant: "destructive" });
+    } finally {
+      setExtracting(false);
+    }
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-5">
