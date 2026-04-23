@@ -14,8 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { FileText, Trash2, Loader2, Plus, Link2 } from "lucide-react";
+import { FileText, Trash2, Loader2, Plus, Link2, Eye, Calendar as CalendarIcon } from "lucide-react";
 import { z } from "zod";
 
 const NO_SESSION = "__none__";
@@ -31,6 +39,8 @@ const minutesSchema = z.object({
 interface SessionOption {
   id: string;
   title: string;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 interface MinutesRecord {
@@ -78,10 +88,12 @@ export const MinutesTab = () => {
     setLoading(false);
   };
 
+  const [viewSessionId, setViewSessionId] = useState<string | null>(null);
+
   const fetchSessions = async () => {
     const { data, error } = await supabase
       .from("sessions")
-      .select("id, title")
+      .select("id, title, start_time, end_time")
       .order("created_at", { ascending: false });
     if (!error && data) setSessions(data);
   };
@@ -294,14 +306,27 @@ export const MinutesTab = () => {
                       Chair: <span className="font-medium text-foreground">{r.chairperson}</span>
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(r.id)}
-                    aria-label="Delete minutes"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {r.session_id && sessionMap.has(r.session_id) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewSessionId(r.session_id)}
+                        aria-label="View session"
+                        title="View session"
+                      >
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(r.id)}
+                      aria-label="Delete minutes"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="whitespace-pre-wrap text-sm border rounded-md p-3 bg-background/60 max-h-64 overflow-auto">
                   {r.minutes}
@@ -311,6 +336,71 @@ export const MinutesTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <SessionDetailsDialog
+        sessionId={viewSessionId}
+        sessions={sessions}
+        records={records}
+        onClose={() => setViewSessionId(null)}
+      />
     </div>
+  );
+};
+
+interface SessionDetailsDialogProps {
+  sessionId: string | null;
+  sessions: SessionOption[];
+  records: MinutesRecord[];
+  onClose: () => void;
+}
+
+const SessionDetailsDialog = ({ sessionId, sessions, records, onClose }: SessionDetailsDialogProps) => {
+  const session = sessions.find((s) => s.id === sessionId) ?? null;
+  const linkedCount = sessionId ? records.filter((r) => r.session_id === sessionId).length : 0;
+
+  const fmt = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "—";
+
+  return (
+    <Dialog open={!!sessionId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-primary" />
+            {session?.title ?? "Session"}
+          </DialogTitle>
+          <DialogDescription>Session overview and linked minutes.</DialogDescription>
+        </DialogHeader>
+        {session ? (
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-[100px_1fr] gap-y-2">
+              <span className="text-muted-foreground">Starts</span>
+              <span className="font-medium">{fmt(session.start_time)}</span>
+              <span className="text-muted-foreground">Ends</span>
+              <span className="font-medium">{fmt(session.end_time)}</span>
+              <span className="text-muted-foreground">Linked minutes</span>
+              <span>
+                <Badge variant="secondary" className="gap-1">
+                  <FileText className="h-3 w-3" />
+                  {linkedCount}
+                </Badge>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Session not found.</p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
