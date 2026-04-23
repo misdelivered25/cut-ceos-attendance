@@ -89,6 +89,10 @@ const Dashboard = () => {
             <MembersPage />
           </TabsContent>
 
+          <TabsContent value="minutes" className="mt-0">
+            <MinutesTab />
+          </TabsContent>
+
           <TabsContent value="analytics" className="mt-0">
             <AnalyticsTab />
           </TabsContent>
