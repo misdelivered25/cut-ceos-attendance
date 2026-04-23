@@ -72,8 +72,9 @@ export const MinutesTab = () => {
     }
 
     setSaving(true);
+    const { chairperson, venue, meeting_date, minutes } = parsed.data;
     const { error } = await supabase.from("meeting_minutes").insert([
-      { ...parsed.data, created_by: user.id },
+      { chairperson, venue, meeting_date, minutes, created_by: user.id },
     ]);
     setSaving(false);
 
