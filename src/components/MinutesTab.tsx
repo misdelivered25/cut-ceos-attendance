@@ -336,6 +336,71 @@ export const MinutesTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <SessionDetailsDialog
+        sessionId={viewSessionId}
+        sessions={sessions}
+        records={records}
+        onClose={() => setViewSessionId(null)}
+      />
     </div>
+  );
+};
+
+interface SessionDetailsDialogProps {
+  sessionId: string | null;
+  sessions: SessionOption[];
+  records: MinutesRecord[];
+  onClose: () => void;
+}
+
+const SessionDetailsDialog = ({ sessionId, sessions, records, onClose }: SessionDetailsDialogProps) => {
+  const session = sessions.find((s) => s.id === sessionId) ?? null;
+  const linkedCount = sessionId ? records.filter((r) => r.session_id === sessionId).length : 0;
+
+  const fmt = (iso: string | null) =>
+    iso
+      ? new Date(iso).toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "—";
+
+  return (
+    <Dialog open={!!sessionId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-primary" />
+            {session?.title ?? "Session"}
+          </DialogTitle>
+          <DialogDescription>Session overview and linked minutes.</DialogDescription>
+        </DialogHeader>
+        {session ? (
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-[100px_1fr] gap-y-2">
+              <span className="text-muted-foreground">Starts</span>
+              <span className="font-medium">{fmt(session.start_time)}</span>
+              <span className="text-muted-foreground">Ends</span>
+              <span className="font-medium">{fmt(session.end_time)}</span>
+              <span className="text-muted-foreground">Linked minutes</span>
+              <span>
+                <Badge variant="secondary" className="gap-1">
+                  <FileText className="h-3 w-3" />
+                  {linkedCount}
+                </Badge>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Session not found.</p>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
