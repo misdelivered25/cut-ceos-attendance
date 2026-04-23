@@ -14,8 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { FileText, Trash2, Loader2, Plus, Link2 } from "lucide-react";
+import { FileText, Trash2, Loader2, Plus, Link2, Eye, Calendar as CalendarIcon } from "lucide-react";
 import { z } from "zod";
 
 const NO_SESSION = "__none__";
