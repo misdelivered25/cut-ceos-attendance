@@ -306,14 +306,27 @@ export const MinutesTab = () => {
                       Chair: <span className="font-medium text-foreground">{r.chairperson}</span>
                     </p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(r.id)}
-                    aria-label="Delete minutes"
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    {r.session_id && sessionMap.has(r.session_id) && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setViewSessionId(r.session_id)}
+                        aria-label="View session"
+                        title="View session"
+                      >
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(r.id)}
+                      aria-label="Delete minutes"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="whitespace-pre-wrap text-sm border rounded-md p-3 bg-background/60 max-h-64 overflow-auto">
                   {r.minutes}
