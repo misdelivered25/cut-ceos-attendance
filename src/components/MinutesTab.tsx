@@ -88,10 +88,12 @@ export const MinutesTab = () => {
     setLoading(false);
   };
 
+  const [viewSessionId, setViewSessionId] = useState<string | null>(null);
+
   const fetchSessions = async () => {
     const { data, error } = await supabase
       .from("sessions")
-      .select("id, title")
+      .select("id, title, start_time, end_time")
       .order("created_at", { ascending: false });
     if (!error && data) setSessions(data);
   };
