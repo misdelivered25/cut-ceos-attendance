@@ -58,6 +58,10 @@ const Dashboard = () => {
                 <Users className="h-4 w-4" />
                 Members
               </TabsTrigger>
+              <TabsTrigger value="minutes" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Minutes
+              </TabsTrigger>
               <TabsTrigger value="analytics" className="gap-2">
                 <TrendingUp className="h-4 w-4" />
                 Analytics
