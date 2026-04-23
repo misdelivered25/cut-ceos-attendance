@@ -59,6 +59,50 @@ export type Database = {
           },
         ]
       }
+      meeting_minutes: {
+        Row: {
+          chairperson: string
+          created_at: string
+          created_by: string
+          id: string
+          meeting_date: string
+          minutes: string
+          session_id: string | null
+          updated_at: string
+          venue: string
+        }
+        Insert: {
+          chairperson: string
+          created_at?: string
+          created_by: string
+          id?: string
+          meeting_date: string
+          minutes: string
+          session_id?: string | null
+          updated_at?: string
+          venue: string
+        }
+        Update: {
+          chairperson?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          meeting_date?: string
+          minutes?: string
+          session_id?: string | null
+          updated_at?: string
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_minutes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           created_at: string
