@@ -23,8 +23,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { FileText, Trash2, Loader2, Plus, Link2, Eye, Calendar as CalendarIcon } from "lucide-react";
+import {
+  FileText,
+  Trash2,
+  Loader2,
+  Plus,
+  Link2,
+  Eye,
+  Calendar as CalendarIcon,
+  Search,
+  Upload,
+  Sparkles,
+} from "lucide-react";
 import { z } from "zod";
+import mammoth from "mammoth";
 
 const NO_SESSION = "__none__";
 const ALL_SESSIONS = "__all__";
