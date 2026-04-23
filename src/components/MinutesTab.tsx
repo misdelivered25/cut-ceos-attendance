@@ -39,6 +39,8 @@ const minutesSchema = z.object({
 interface SessionOption {
   id: string;
   title: string;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 interface MinutesRecord {
