@@ -15,12 +15,14 @@ import logo from "@/assets/cut-ceos-logo.png";
 const attendanceSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
   phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(15, "Phone number is too long"),
+  email: z.string().trim().email("Invalid email").max(254).optional().or(z.literal("")),
 });
 
 const Scan = () => {
   const { token } = useParams<{ token: string }>();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const queryClient = useQueryClient();
 
@@ -40,7 +42,7 @@ const Scan = () => {
   });
 
   const submitAttendance = useMutation({
-    mutationFn: async (data: { name: string; phone: string }) => {
+    mutationFn: async (data: { name: string; phone: string; email: string }) => {
       const validation = attendanceSchema.safeParse(data);
       if (!validation.success) {
         throw new Error(validation.error.errors[0].message);
@@ -51,6 +53,7 @@ const Scan = () => {
           session_id: session?.id,
           name: data.name,
           phone: data.phone,
+          email: data.email || undefined,
         },
       });
 
@@ -61,10 +64,15 @@ const Scan = () => {
       if (result?.error) {
         throw new Error(result.error);
       }
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       setSubmitted(true);
-      toast.success("Attendance marked successfully!");
+      if (result?.matched) {
+        toast.success("Attendance marked — linked to your member profile!");
+      } else {
+        toast.success("Attendance marked successfully!");
+      }
       queryClient.invalidateQueries({ queryKey: ["attendees"] });
     },
     onError: (error: Error) => {
@@ -74,7 +82,7 @@ const Scan = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitAttendance.mutate({ name, phone });
+    submitAttendance.mutate({ name, phone, email });
   };
 
   if (sessionLoading) {
@@ -219,6 +227,18 @@ const Scan = () => {
                 required
                 maxLength={15}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={254}
+              />
+              <p className="text-xs text-muted-foreground">Helps us link your attendance to your member profile.</p>
             </div>
             <Button type="submit" className="w-full" disabled={submitAttendance.isPending}>
               {submitAttendance.isPending ? "Submitting..." : "Mark Attendance"}

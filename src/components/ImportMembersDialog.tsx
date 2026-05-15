@@ -376,9 +376,70 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
     setImporting(true);
     const updated = [...parsedData];
 
+    // Pre-load existing members for AI-style duplicate detection (name fuzzy + email)
+    const { data: existing } = await supabase
+      .from("members")
+      .select("id, member_id, full_name, email")
+      .eq("created_by", user.id);
+
+    const normalize = (s: string) =>
+      (s || "").toLowerCase().replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
+    const tokenSet = (s: string) => normalize(s).split(" ").filter(Boolean).sort().join(" ");
+    const lev = (a: string, b: string): number => {
+      if (a === b) return 0;
+      if (!a.length) return b.length;
+      if (!b.length) return a.length;
+      const dp: number[][] = Array.from({ length: a.length + 1 }, () => Array(b.length + 1).fill(0));
+      for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+      for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+      for (let i = 1; i <= a.length; i++)
+        for (let j = 1; j <= b.length; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+        }
+      return dp[a.length][b.length];
+    };
+    const sim = (a: string, b: string) => {
+      const m = Math.max(a.length, b.length);
+      return m ? 1 - lev(a, b) / m : 1;
+    };
+
+    const findExistingMatch = (m: ParsedMember) => {
+      if (!existing) return null;
+      const emailLc = (m.email || "").toLowerCase().trim();
+      if (emailLc) {
+        const byEmail = existing.find((e) => (e.email || "").toLowerCase().trim() === emailLc);
+        if (byEmail) return { row: byEmail, method: "email" };
+      }
+      const targetTokens = tokenSet(m.full_name);
+      const targetNorm = normalize(m.full_name);
+      let best: { row: typeof existing[number]; score: number } | null = null;
+      for (const e of existing) {
+        if (tokenSet(e.full_name) === targetTokens && targetTokens) {
+          return { row: e, method: "name" };
+        }
+        const score = sim(targetNorm, normalize(e.full_name));
+        if (!best || score > best.score) best = { row: e, score };
+      }
+      if (best && best.score >= 0.88) return { row: best.row, method: `name(${best.score.toFixed(2)})` };
+      return null;
+    };
+
     for (let i = 0; i < updated.length; i++) {
       const m = updated[i];
       try {
+        // AI-style pre-check: skip if matches an existing member
+        const match = findExistingMatch(m);
+        if (match) {
+          updated[i] = {
+            ...m,
+            status: "duplicate",
+            message: `Matched existing member ${match.row.member_id} (${match.method})`,
+          };
+          setParsedData([...updated]);
+          continue;
+        }
+
         const { data: memberId, error: idError } = await supabase.rpc("generate_member_id");
         if (idError) throw idError;
 
@@ -400,6 +461,9 @@ export const ImportMembersDialog = ({ open, onOpenChange }: ImportMembersDialogP
           }
         } else {
           updated[i] = { ...m, status: "success", message: memberId };
+          // Add the freshly inserted member to the in-memory existing list so
+          // subsequent rows in the same batch can match against it.
+          existing?.push({ id: "", member_id: memberId, full_name: m.full_name, email: m.email || null });
         }
       } catch (err: any) {
         updated[i] = { ...m, status: "error", message: err.message };
