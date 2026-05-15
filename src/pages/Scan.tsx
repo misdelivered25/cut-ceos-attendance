@@ -228,6 +228,18 @@ const Scan = () => {
                 maxLength={15}
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                maxLength={254}
+              />
+              <p className="text-xs text-muted-foreground">Helps us link your attendance to your member profile.</p>
+            </div>
             <Button type="submit" className="w-full" disabled={submitAttendance.isPending}>
               {submitAttendance.isPending ? "Submitting..." : "Mark Attendance"}
             </Button>
