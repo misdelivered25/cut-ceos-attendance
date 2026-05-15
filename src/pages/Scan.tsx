@@ -15,6 +15,7 @@ import logo from "@/assets/cut-ceos-logo.png";
 const attendanceSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
   phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(15, "Phone number is too long"),
+  email: z.string().trim().email("Invalid email").max(254).optional().or(z.literal("")),
 });
 
 const Scan = () => {
