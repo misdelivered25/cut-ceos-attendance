@@ -22,6 +22,7 @@ const Scan = () => {
   const { token } = useParams<{ token: string }>();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const queryClient = useQueryClient();
 
