@@ -42,7 +42,7 @@ const Scan = () => {
   });
 
   const submitAttendance = useMutation({
-    mutationFn: async (data: { name: string; phone: string }) => {
+    mutationFn: async (data: { name: string; phone: string; email: string }) => {
       const validation = attendanceSchema.safeParse(data);
       if (!validation.success) {
         throw new Error(validation.error.errors[0].message);
@@ -53,6 +53,7 @@ const Scan = () => {
           session_id: session?.id,
           name: data.name,
           phone: data.phone,
+          email: data.email || undefined,
         },
       });
 
@@ -63,10 +64,15 @@ const Scan = () => {
       if (result?.error) {
         throw new Error(result.error);
       }
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (result: any) => {
       setSubmitted(true);
-      toast.success("Attendance marked successfully!");
+      if (result?.matched) {
+        toast.success("Attendance marked — linked to your member profile!");
+      } else {
+        toast.success("Attendance marked successfully!");
+      }
       queryClient.invalidateQueries({ queryKey: ["attendees"] });
     },
     onError: (error: Error) => {
@@ -76,7 +82,7 @@ const Scan = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitAttendance.mutate({ name, phone });
+    submitAttendance.mutate({ name, phone, email });
   };
 
   if (sessionLoading) {
