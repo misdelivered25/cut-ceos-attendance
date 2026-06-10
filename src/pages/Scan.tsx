@@ -13,14 +13,16 @@ import { z } from "zod";
 import logo from "@/assets/cut-ceos-logo.png";
 
 const attendanceSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  name: z.string().trim().min(1, "Full name is required").max(100, "Name is too long"),
+  student_id: z.string().trim().min(1, "Student ID is required").max(50, "Student ID is too long"),
   phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(15, "Phone number is too long"),
-  email: z.string().trim().email("Invalid email").max(254).optional().or(z.literal("")),
+  email: z.string().trim().email("Invalid email").max(254),
 });
 
 const Scan = () => {
   const { token } = useParams<{ token: string }>();
   const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -42,7 +44,7 @@ const Scan = () => {
   });
 
   const submitAttendance = useMutation({
-    mutationFn: async (data: { name: string; phone: string; email: string }) => {
+    mutationFn: async (data: { name: string; student_id: string; phone: string; email: string }) => {
       const validation = attendanceSchema.safeParse(data);
       if (!validation.success) {
         throw new Error(validation.error.errors[0].message);
@@ -52,8 +54,9 @@ const Scan = () => {
         body: {
           session_id: session?.id,
           name: data.name,
+          student_id: data.student_id,
           phone: data.phone,
-          email: data.email || undefined,
+          email: data.email,
         },
       });
 
@@ -82,7 +85,7 @@ const Scan = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitAttendance.mutate({ name, phone, email });
+    submitAttendance.mutate({ name, student_id: studentId, phone, email });
   };
 
   if (sessionLoading) {
@@ -163,9 +166,12 @@ const Scan = () => {
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
               <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
-            <h2 className="mb-2 text-2xl font-bold">Attendance Recorded!</h2>
+            <h2 className="mb-2 text-2xl font-bold">Thank you for Submitting your Attendance</h2>
             <p className="text-muted-foreground">
-              Your attendance has been successfully marked for {session.title}
+              Your attendance has been recorded for {session.title}.
+            </p>
+            <p className="mt-8 text-xs text-muted-foreground">
+              Powered by IMI Technologies | All rights reserved
             </p>
           </CardContent>
         </Card>
@@ -217,6 +223,18 @@ const Scan = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="student_id">Student ID</Label>
+              <Input
+                id="student_id"
+                type="text"
+                placeholder="e.g. C12345"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                required
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
@@ -229,21 +247,24 @@ const Scan = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 maxLength={254}
               />
-              <p className="text-xs text-muted-foreground">Helps us link your attendance to your member profile.</p>
             </div>
             <Button type="submit" className="w-full" disabled={submitAttendance.isPending}>
-              {submitAttendance.isPending ? "Submitting..." : "Mark Attendance"}
+              {submitAttendance.isPending ? "Submitting..." : "Submit Attendance"}
             </Button>
           </form>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Powered by IMI Technologies | All rights reserved
+          </p>
         </CardContent>
       </Card>
     </div>

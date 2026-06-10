@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       attendees: {
         Row: {
+          email: string | null
           id: string
           ip_address: string | null
           member_id: string | null
@@ -23,8 +24,10 @@ export type Database = {
           phone: string
           scanned_at: string
           session_id: string
+          student_id: string | null
         }
         Insert: {
+          email?: string | null
           id?: string
           ip_address?: string | null
           member_id?: string | null
@@ -32,8 +35,10 @@ export type Database = {
           phone: string
           scanned_at?: string
           session_id: string
+          student_id?: string | null
         }
         Update: {
+          email?: string | null
           id?: string
           ip_address?: string | null
           member_id?: string | null
@@ -41,6 +46,7 @@ export type Database = {
           phone?: string
           scanned_at?: string
           session_id?: string
+          student_id?: string | null
         }
         Relationships: [
           {
