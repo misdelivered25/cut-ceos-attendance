@@ -166,9 +166,12 @@ const Scan = () => {
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
               <CheckCircle2 className="h-10 w-10 text-success" />
             </div>
-            <h2 className="mb-2 text-2xl font-bold">Attendance Recorded!</h2>
+            <h2 className="mb-2 text-2xl font-bold">Thank you for Submitting your Attendance</h2>
             <p className="text-muted-foreground">
-              Your attendance has been successfully marked for {session.title}
+              Your attendance has been recorded for {session.title}.
+            </p>
+            <p className="mt-8 text-xs text-muted-foreground">
+              Powered by IMI Technologies | All rights reserved
             </p>
           </CardContent>
         </Card>
