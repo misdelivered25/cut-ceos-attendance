@@ -43,14 +43,11 @@ const Index = () => {
             Built for the future of education.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" className="text-lg" onClick={() => navigate("/auth")}>
-              Start Free Trial
-            </Button>
             <Button size="lg" variant="outline" className="text-lg" onClick={() => {
-            document.getElementById('contact')?.scrollIntoView({
-              behavior: 'smooth'
-            });
-          }}>
+              document.getElementById('contact')?.scrollIntoView({
+                behavior: 'smooth'
+              });
+            }}>
               Contact Us
             </Button>
           </div>
