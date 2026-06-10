@@ -13,14 +13,16 @@ import { z } from "zod";
 import logo from "@/assets/cut-ceos-logo.png";
 
 const attendanceSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  name: z.string().trim().min(1, "Full name is required").max(100, "Name is too long"),
+  student_id: z.string().trim().min(1, "Student ID is required").max(50, "Student ID is too long"),
   phone: z.string().trim().min(10, "Phone number must be at least 10 digits").max(15, "Phone number is too long"),
-  email: z.string().trim().email("Invalid email").max(254).optional().or(z.literal("")),
+  email: z.string().trim().email("Invalid email").max(254),
 });
 
 const Scan = () => {
   const { token } = useParams<{ token: string }>();
   const [name, setName] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
