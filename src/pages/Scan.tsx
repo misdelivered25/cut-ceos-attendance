@@ -223,6 +223,18 @@ const Scan = () => {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="student_id">Student ID</Label>
+              <Input
+                id="student_id"
+                type="text"
+                placeholder="e.g. C12345"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+                required
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
@@ -235,21 +247,24 @@ const Scan = () => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email <span className="text-muted-foreground text-xs">(optional)</span></Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                required
                 maxLength={254}
               />
-              <p className="text-xs text-muted-foreground">Helps us link your attendance to your member profile.</p>
             </div>
             <Button type="submit" className="w-full" disabled={submitAttendance.isPending}>
-              {submitAttendance.isPending ? "Submitting..." : "Mark Attendance"}
+              {submitAttendance.isPending ? "Submitting..." : "Submit Attendance"}
             </Button>
           </form>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Powered by IMI Technologies | All rights reserved
+          </p>
         </CardContent>
       </Card>
     </div>
