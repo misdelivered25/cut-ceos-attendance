@@ -24,10 +24,6 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => navigate("/auth")}>
-              Sign In
-            </Button>
-            <Button onClick={() => navigate("/auth")}>Get Started</Button>
           </div>
         </div>
       </header>
@@ -47,14 +43,11 @@ const Index = () => {
             Built for the future of education.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button size="lg" className="text-lg" onClick={() => navigate("/auth")}>
-              Start Free Trial
-            </Button>
             <Button size="lg" variant="outline" className="text-lg" onClick={() => {
-            document.getElementById('contact')?.scrollIntoView({
-              behavior: 'smooth'
-            });
-          }}>
+              document.getElementById('contact')?.scrollIntoView({
+                behavior: 'smooth'
+              });
+            }}>
               Contact Us
             </Button>
           </div>
@@ -234,8 +227,12 @@ const Index = () => {
           <p className="mb-8 text-lg opacity-90">
             Join the movement towards paperless, efficient attendance tracking
           </p>
-          <Button size="lg" variant="secondary" className="text-lg" onClick={() => navigate("/auth")}>
-            Get Started Now
+          <Button size="lg" variant="secondary" className="text-lg" onClick={() => {
+            document.getElementById('contact')?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}>
+            Contact Us
           </Button>
         </div>
       </section>
