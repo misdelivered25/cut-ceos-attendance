@@ -85,7 +85,7 @@ const Scan = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    submitAttendance.mutate({ name, phone, email });
+    submitAttendance.mutate({ name, student_id: studentId, phone, email });
   };
 
   if (sessionLoading) {
