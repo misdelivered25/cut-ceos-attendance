@@ -44,7 +44,7 @@ const Scan = () => {
   });
 
   const submitAttendance = useMutation({
-    mutationFn: async (data: { name: string; phone: string; email: string }) => {
+    mutationFn: async (data: { name: string; student_id: string; phone: string; email: string }) => {
       const validation = attendanceSchema.safeParse(data);
       if (!validation.success) {
         throw new Error(validation.error.errors[0].message);
@@ -54,8 +54,9 @@ const Scan = () => {
         body: {
           session_id: session?.id,
           name: data.name,
+          student_id: data.student_id,
           phone: data.phone,
-          email: data.email || undefined,
+          email: data.email,
         },
       });
 
