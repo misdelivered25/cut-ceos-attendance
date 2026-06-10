@@ -227,8 +227,12 @@ const Index = () => {
           <p className="mb-8 text-lg opacity-90">
             Join the movement towards paperless, efficient attendance tracking
           </p>
-          <Button size="lg" variant="secondary" className="text-lg" onClick={() => navigate("/auth")}>
-            Get Started Now
+          <Button size="lg" variant="secondary" className="text-lg" onClick={() => {
+            document.getElementById('contact')?.scrollIntoView({
+              behavior: 'smooth'
+            });
+          }}>
+            Contact Us
           </Button>
         </div>
       </section>
