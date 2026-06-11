@@ -79,6 +79,10 @@ export const SessionCard = ({ session }: SessionCardProps) => {
   };
 
   const handleDuplicate = async () => {
+    if (!user?.id) {
+      toast.error("You must be signed in to duplicate a session");
+      return;
+    }
     setIsDuplicating(true);
     const generateToken = () =>
       Math.random().toString(36).substring(2, 15) +
