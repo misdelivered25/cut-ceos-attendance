@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -27,7 +28,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Download, FileText, Loader2, Trash2, UserCheck, UserPlus } from "lucide-react";
+import { Download, FileText, Loader2, Search, Trash2, UserCheck, UserPlus, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ManualAttendeeDialog } from "./ManualAttendeeDialog";
@@ -52,6 +53,7 @@ export const ViewAttendeesDialog = ({
 }: ViewAttendeesDialogProps) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
   const { data: attendees, isLoading, refetch } = useQuery({
@@ -72,6 +74,28 @@ export const ViewAttendeesDialog = ({
     enabled: open,
     refetchInterval: open ? 5000 : false, // Live refresh every 5 seconds when dialog is open
   });
+
+  const filteredAttendees = useMemo(() => {
+    if (!attendees) return [];
+    if (!searchQuery.trim()) return attendees;
+    const q = searchQuery.toLowerCase();
+    return attendees.filter(
+      (a) =>
+        a.name.toLowerCase().includes(q) ||
+        a.phone.includes(q) ||
+        (a.student_id && a.student_id.toLowerCase().includes(q))
+    );
+  }, [attendees, searchQuery]);
+
+  const handleCopyNames = () => {
+    if (!attendees || attendees.length === 0) {
+      toast.error("No attendees to copy");
+      return;
+    }
+    const names = attendees.map((a, i) => `${i + 1}. ${a.name}`).join("\n");
+    navigator.clipboard.writeText(names);
+    toast.success(`${attendees.length} names copied to clipboard`);
+  };
 
   const handleExportExcel = () => {
     if (!attendees || attendees.length === 0) {
@@ -224,7 +248,7 @@ export const ViewAttendeesDialog = ({
                   Members: <span className="font-semibold text-foreground">{attendees?.filter(a => a.member_id).length || 0}</span>
                 </span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="default"
                   size="sm"
@@ -232,6 +256,15 @@ export const ViewAttendeesDialog = ({
                 >
                   <UserPlus className="mr-2 h-4 w-4" />
                   Add
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyNames}
+                  disabled={!attendees || attendees.length === 0}
+                >
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                  Copy Names
                 </Button>
                 <Button 
                   variant="outline" 
@@ -254,6 +287,17 @@ export const ViewAttendeesDialog = ({
               </div>
             </div>
 
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, phone, or student ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -265,6 +309,7 @@ export const ViewAttendeesDialog = ({
                     <TableRow>
                       <TableHead className="w-12">#</TableHead>
                       <TableHead>Name</TableHead>
+                      <TableHead>Student ID</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Member</TableHead>
                       <TableHead>Submission Time</TableHead>
@@ -272,36 +317,51 @@ export const ViewAttendeesDialog = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {attendees.map((attendee, index) => (
-                      <TableRow key={attendee.id}>
-                        <TableCell className="text-muted-foreground">{index + 1}</TableCell>
-                        <TableCell className="font-medium">{attendee.name}</TableCell>
-                        <TableCell>{attendee.phone}</TableCell>
-                        <TableCell>
-                          {attendee.member ? (
-                            <Badge variant="secondary" className="gap-1">
-                              <UserCheck className="h-3 w-3" />
-                              {attendee.member.member_id}
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground text-sm">—</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {format(new Date(attendee.scanned_at), "MMM d, h:mm a")}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteId(attendee.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                    {filteredAttendees.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
+                          No results for "{searchQuery}"
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      filteredAttendees.map((attendee, index) => (
+                        <TableRow key={attendee.id}>
+                          <TableCell className="text-muted-foreground">{index + 1}</TableCell>
+                          <TableCell className="font-medium">{attendee.name}</TableCell>
+                          <TableCell>
+                            {attendee.student_id ? (
+                              <code className="bg-muted px-1.5 py-0.5 rounded text-xs">{attendee.student_id}</code>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{attendee.phone}</TableCell>
+                          <TableCell>
+                            {attendee.member ? (
+                              <Badge variant="secondary" className="gap-1">
+                                <UserCheck className="h-3 w-3" />
+                                {attendee.member.member_id}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(attendee.scanned_at), "MMM d, h:mm a")}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteId(attendee.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </div>

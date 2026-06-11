@@ -43,6 +43,9 @@ const Index = () => {
             Built for the future of education.
           </p>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <Button size="lg" className="text-lg" onClick={() => navigate("/auth")}>
+              Get Started
+            </Button>
             <Button size="lg" variant="outline" className="text-lg" onClick={() => {
               document.getElementById('contact')?.scrollIntoView({
                 behavior: 'smooth'
@@ -154,7 +157,7 @@ const Index = () => {
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-1 h-6 w-6 shrink-0 text-primary" />
                 <p>
-                  A product of <strong className="text-foreground">HGC Private Limited</strong>, proudly sponsored by{" "}
+                  A product of <strong className="text-foreground">IMI Technologies</strong>, proudly sponsored by{" "}
                   <strong className="text-foreground">Tatenda Foundation</strong>
                 </p>
               </div>
@@ -190,8 +193,8 @@ const Index = () => {
                 <Mail className="mx-auto mb-2 h-10 w-10 text-primary" />
                 <CardTitle>Email</CardTitle>
                 <CardDescription className="break-all">
-                  <a href="mailto:info@hgcprivatelimited.com" className="hover:text-primary">
-                    info@hgcprivatelimited.com
+                  <a href="mailto:info@imitechnologies.co.zw" className="hover:text-primary">
+                    info@imitechnologies.co.zw
                   </a>
                 </CardDescription>
               </CardHeader>

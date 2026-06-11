@@ -34,6 +34,7 @@ import {
   Search,
   Upload,
   Sparkles,
+  Pencil,
 } from "lucide-react";
 import { z } from "zod";
 import mammoth from "mammoth";
@@ -74,6 +75,9 @@ export const MinutesTab = () => {
   const [filterSessionId, setFilterSessionId] = useState<string>(ALL_SESSIONS);
   const [searchQuery, setSearchQuery] = useState("");
   const [extracting, setExtracting] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MinutesRecord | null>(null);
+  const [editForm, setEditForm] = useState({ chairperson: "", venue: "", meeting_date: "", minutes: "" });
+  const [editSaving, setEditSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState({
     chairperson: "",
@@ -170,6 +174,45 @@ export const MinutesTab = () => {
     }
     toast({ title: "Deleted", description: "Minutes entry removed." });
     setRecords((r) => r.filter((x) => x.id !== id));
+  };
+
+  const handleEditOpen = (record: MinutesRecord) => {
+    setEditingRecord(record);
+    setEditForm({
+      chairperson: record.chairperson,
+      venue: record.venue,
+      meeting_date: record.meeting_date,
+      minutes: record.minutes,
+    });
+  };
+
+  const handleEditSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRecord) return;
+    setEditSaving(true);
+    const { error } = await supabase
+      .from("meeting_minutes")
+      .update({
+        chairperson: editForm.chairperson,
+        venue: editForm.venue,
+        meeting_date: editForm.meeting_date,
+        minutes: editForm.minutes,
+      })
+      .eq("id", editingRecord.id);
+    setEditSaving(false);
+    if (error) {
+      toast({ title: "Failed to save", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Updated", description: "Minutes saved successfully." });
+    setRecords((r) =>
+      r.map((x) =>
+        x.id === editingRecord.id
+          ? { ...x, ...editForm }
+          : x
+      )
+    );
+    setEditingRecord(null);
   };
 
   const filteredRecords = useMemo(() => {
@@ -463,6 +506,15 @@ export const MinutesTab = () => {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => handleEditOpen(r)}
+                      aria-label="Edit minutes"
+                      title="Edit minutes"
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDelete(r.id)}
                       aria-label="Delete minutes"
                     >
@@ -485,6 +537,71 @@ export const MinutesTab = () => {
         records={records}
         onClose={() => setViewSessionId(null)}
       />
+
+      {/* Edit Minutes Dialog */}
+      <Dialog open={!!editingRecord} onOpenChange={(o) => !o && setEditingRecord(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-4 w-4 text-primary" />
+              Edit Meeting Minutes
+            </DialogTitle>
+            <DialogDescription>Update the details for this minutes record.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSave} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-chair">Chair of the Meeting</Label>
+              <Input
+                id="edit-chair"
+                value={editForm.chairperson}
+                onChange={(e) => setEditForm({ ...editForm, chairperson: e.target.value })}
+                maxLength={120}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-venue">Venue</Label>
+              <Input
+                id="edit-venue"
+                value={editForm.venue}
+                onChange={(e) => setEditForm({ ...editForm, venue: e.target.value })}
+                maxLength={200}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-date">Meeting Date</Label>
+              <Input
+                id="edit-date"
+                type="date"
+                value={editForm.meeting_date}
+                onChange={(e) => setEditForm({ ...editForm, meeting_date: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-minutes">Minutes of the Meeting</Label>
+              <Textarea
+                id="edit-minutes"
+                rows={8}
+                value={editForm.minutes}
+                onChange={(e) => setEditForm({ ...editForm, minutes: e.target.value })}
+                maxLength={20000}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setEditingRecord(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={editSaving}>
+                {editSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {editSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

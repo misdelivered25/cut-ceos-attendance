@@ -35,11 +35,105 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload, ToggleLeft, FileDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Search, Loader2, UserPlus, Trash2, Edit, Download, Upload, ToggleLeft, FileDown, ChevronLeft, ChevronRight, History } from "lucide-react";
 import { toast } from "sonner";
 import { ImportMembersDialog } from "./ImportMembersDialog";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+
+// Member Attendance History Dialog
+const MemberHistoryDialog = ({
+  member,
+  onClose,
+}: {
+  member: Member | null;
+  onClose: () => void;
+}) => {
+  const { data: history, isLoading } = useQuery({
+    queryKey: ["member-history", member?.id],
+    queryFn: async () => {
+      if (!member?.id) return [];
+      const { data, error } = await supabase
+        .from("attendees")
+        .select("*, session:sessions(id, title, start_time, mode)")
+        .eq("member_id", member.id)
+        .order("scanned_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!member?.id,
+  });
+
+  const { data: sessionCount } = useQuery({
+    queryKey: ["total-sessions-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("sessions")
+        .select("*", { count: "exact", head: true });
+      return count ?? 0;
+    },
+    enabled: !!member?.id,
+  });
+
+  const attendanceRate =
+    sessionCount && history ? Math.round((history.length / sessionCount) * 100) : 0;
+
+  return (
+    <Dialog open={!!member} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5 text-primary" />
+            {member?.full_name} — Attendance History
+          </DialogTitle>
+          <DialogDescription>
+            {history?.length ?? 0} sessions attended
+            {sessionCount ? ` out of ${sessionCount} total (${attendanceRate}%)` : ""}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto">
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : !history || history.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No attendance records found for this member.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Session</TableHead>
+                  <TableHead>Mode</TableHead>
+                  <TableHead>Check-in Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {history.map((record, i) => (
+                  <TableRow key={record.id}>
+                    <TableCell className="text-muted-foreground">{i + 1}</TableCell>
+                    <TableCell className="font-medium">{(record.session as any)?.title ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {(record.session as any)?.mode ?? "—"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{format(new Date(record.scanned_at), "MMM d, yyyy h:mm a")}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 interface Member {
   id: string;
@@ -66,6 +160,7 @@ export const MembersPage = () => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [historyMember, setHistoryMember] = useState<Member | null>(null);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -503,6 +598,9 @@ export const MembersPage = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" title="View history" onClick={() => setHistoryMember(member)}>
+                          <History className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(member)}>
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -706,6 +804,11 @@ export const MembersPage = () => {
       </AlertDialog>
 
       <ImportMembersDialog open={showImport} onOpenChange={setShowImport} />
+
+      <MemberHistoryDialog
+        member={historyMember}
+        onClose={() => setHistoryMember(null)}
+      />
     </div>
   );
 };
