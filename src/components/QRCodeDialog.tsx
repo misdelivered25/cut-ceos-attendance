@@ -93,12 +93,9 @@ export const QRCodeDialog = ({ open, onOpenChange, session }: QRCodeDialogProps)
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  const handleWhatsAppShare = () => {
-    const msg = encodeURIComponent(
-      `📋 *${session.title}*\nMark your attendance here:\n${attendanceUrl}`
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
-  };
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
+    `📋 *${session.title}*\nMark your attendance here:\n${attendanceUrl}`
+  )}`;
 
   const handlePrint = () => {
     const svg = document.getElementById("qr-code-svg");
@@ -185,11 +182,13 @@ export const QRCodeDialog = ({ open, onOpenChange, session }: QRCodeDialogProps)
             </Button>
             <Button
               variant="outline"
-              onClick={handleWhatsAppShare}
+              asChild
               className="border-green-200 text-green-700 hover:bg-green-50 hover:text-green-800 dark:border-green-800 dark:text-green-400"
             >
-              <MessageCircle className="mr-2 h-4 w-4" />
-              WhatsApp
+              <a href={whatsappShareUrl} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                WhatsApp
+              </a>
             </Button>
             <Button variant="outline" onClick={handlePrint}>
               <Printer className="mr-2 h-4 w-4" />
