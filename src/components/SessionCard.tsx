@@ -101,10 +101,10 @@ export const SessionCard = ({ session }: SessionCardProps) => {
     const { error } = await supabase.from("sessions").insert({
       title: `${session.title} (Copy)`,
       qr_token: generateToken(),
-      created_by: user?.id,
+      created_by: user.id,
       start_time: startTime.toISOString(),
       end_time: endTime?.toISOString() || null,
-      mode: session.mode,
+      mode: session.mode as "open" | "timed",
       time_limit_enabled: session.time_limit_enabled,
       notification_threshold: session.notification_threshold,
       notification_email: session.notification_email,
