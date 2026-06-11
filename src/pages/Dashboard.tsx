@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, Home, Users, Calendar, BarChart3, TrendingUp, FileText } from "lucide-react";
+import { Plus, LogOut, Home, Users, Calendar, BarChart3, TrendingUp, FileText, LayoutDashboard } from "lucide-react";
 import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
 import { MembersPage } from "@/components/MembersPage";
 import { CrossSessionComparisonDialog } from "@/components/CrossSessionComparisonDialog";
 import { MinutesTab } from "@/components/MinutesTab";
+import { OverviewTab } from "@/components/OverviewTab";
 import logo from "@/assets/cut-ceos-logo.png";
 import Footer from "@/components/Footer";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -19,7 +20,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("sessions");
+  const [activeTab, setActiveTab] = useState("overview");
 
   return (
     <div className="min-h-screen bg-dots flex flex-col">
@@ -50,6 +51,10 @@ const Dashboard = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <TabsList>
+              <TabsTrigger value="overview" className="gap-2">
+                <LayoutDashboard className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
               <TabsTrigger value="sessions" className="gap-2">
                 <Calendar className="h-4 w-4" />
                 Sessions
@@ -80,6 +85,10 @@ const Dashboard = () => {
               </div>
             )}
           </div>
+
+          <TabsContent value="overview" className="mt-0">
+            <OverviewTab />
+          </TabsContent>
 
           <TabsContent value="sessions" className="mt-0">
             <SessionsList />

@@ -5,13 +5,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SessionCard } from "./SessionCard";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, Filter } from "lucide-react";
+import { Loader2, Search, Filter, ArrowUpDown } from "lucide-react";
 import { format, isToday, isThisWeek, isThisMonth } from "date-fns";
 
 export const SessionsList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [modeFilter, setModeFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["sessions"],
@@ -54,6 +55,20 @@ export const SessionsList = () => {
     }
 
     return matchesSearch && matchesDate && matchesMode;
+  });
+
+  const sortedSessions = [...(filteredSessions || [])].sort((a, b) => {
+    switch (sortBy) {
+      case "oldest":
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      case "alpha":
+        return a.title.localeCompare(b.title);
+      case "alpha_desc":
+        return b.title.localeCompare(a.title);
+      case "newest":
+      default:
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
   });
 
   if (isLoading) {
@@ -99,12 +114,24 @@ export const SessionsList = () => {
             <SelectItem value="open">Open</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full sm:w-44">
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Sort" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">Newest First</SelectItem>
+            <SelectItem value="oldest">Oldest First</SelectItem>
+            <SelectItem value="alpha">A → Z</SelectItem>
+            <SelectItem value="alpha_desc">Z → A</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Results count */}
       {sessions && sessions.length > 0 && (
         <p className="text-sm text-muted-foreground">
-          Showing {filteredSessions?.length || 0} of {sessions.length} sessions
+          Showing {sortedSessions?.length || 0} of {sessions.length} sessions
         </p>
       )}
 
@@ -116,7 +143,7 @@ export const SessionsList = () => {
             <p className="text-sm text-muted-foreground">Create your first session to get started</p>
           </CardContent>
         </Card>
-      ) : filteredSessions?.length === 0 ? (
+      ) : sortedSessions?.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-lg text-muted-foreground">No matching sessions</p>
@@ -125,7 +152,7 @@ export const SessionsList = () => {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {filteredSessions?.map((session) => (
+          {sortedSessions?.map((session) => (
             <SessionCard key={session.id} session={session} />
           ))}
         </div>
