@@ -11,10 +11,8 @@ const corsHeaders = {
 
 interface NotificationRequest {
   session_id: string;
-  session_title: string;
   attendee_count: number;
   threshold: number;
-  email: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,60 +21,83 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
 
-    const { session_id, session_title, attendee_count, threshold, email }: NotificationRequest = await req.json();
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
 
-    console.log(`Sending notification for session ${session_id} to ${email}`);
+    const { data: userData, error: userErr } = await adminClient.auth.getUser(token);
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const userId = userData.user.id;
+
+    const body = (await req.json()) as NotificationRequest;
+    const { session_id, attendee_count, threshold } = body;
+    if (!session_id || typeof attendee_count !== "number" || typeof threshold !== "number") {
+      return new Response(JSON.stringify({ error: "Invalid payload" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Fetch session and ensure caller owns it; pull destination email from DB only
+    const { data: session, error: sErr } = await adminClient
+      .from("sessions")
+      .select("id, title, notification_email, created_by")
+      .eq("id", session_id)
+      .maybeSingle();
+
+    if (sErr || !session || session.created_by !== userId) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (!session.notification_email) {
+      return new Response(JSON.stringify({ error: "No notification email configured" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const safeTitle = String(session.title).slice(0, 200).replace(/[<>]/g, "");
+    const safeCount = Math.max(0, Math.floor(attendee_count));
+    const safeThreshold = Math.max(0, Math.floor(threshold));
 
     const emailResponse = await resend.emails.send({
       from: "CUT CEOS <onboarding@resend.dev>",
-      to: [email],
-      subject: `🎉 Attendance Milestone: ${attendee_count} attendees for ${session_title}!`,
+      to: [session.notification_email],
+      subject: `Attendance Milestone: ${safeCount} attendees for ${safeTitle}`,
       html: `
         <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px; }
-            .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            .header { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; padding: 30px; text-align: center; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .content { padding: 30px; }
-            .milestone { background: #f0f9ff; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-            .milestone .number { font-size: 48px; font-weight: bold; color: #3b82f6; }
-            .milestone .label { color: #64748b; }
-            .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>🎉 Attendance Milestone Reached!</h1>
+        <html><body style="font-family: sans-serif; background:#f5f5f5; padding:20px;">
+          <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;padding:30px;text-align:center;">
+              <h1 style="margin:0;">Attendance Milestone Reached</h1>
             </div>
-            <div class="content">
-              <p>Great news! Your session "<strong>${session_title}</strong>" has reached a significant milestone.</p>
-              <div class="milestone">
-                <div class="number">${attendee_count}</div>
-                <div class="label">Attendees (Threshold: ${threshold})</div>
+            <div style="padding:30px;">
+              <p>Your session "<strong>${safeTitle}</strong>" has reached a milestone.</p>
+              <div style="background:#f0f9ff;border-radius:8px;padding:20px;text-align:center;">
+                <div style="font-size:48px;font-weight:bold;color:#3b82f6;">${safeCount}</div>
+                <div style="color:#64748b;">Attendees (Threshold: ${safeThreshold})</div>
               </div>
-              <p>Keep up the great work with CUT CEOS!</p>
-            </div>
-            <div class="footer">
-              <p>CUT CEOS Attendance System</p>
             </div>
           </div>
-        </body>
-        </html>
+        </body></html>
       `,
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("Email sent:", emailResponse);
 
-    // Mark notification as sent
-    await supabase
+    await adminClient
       .from("sessions")
       .update({ notification_sent: true })
       .eq("id", session_id);
@@ -87,13 +108,9 @@ const handler = async (req: Request): Promise<Response> => {
     });
   } catch (error: any) {
     console.error("Error in send-notification function:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500, headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   }
 };
 

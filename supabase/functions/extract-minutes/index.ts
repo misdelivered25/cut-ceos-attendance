@@ -11,6 +11,23 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require authenticated caller to prevent AI credit abuse
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.38.4");
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: userData, error: userErr } = await adminClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { text, filename } = (await req.json()) as ExtractRequest;
 
     if (!text || typeof text !== "string" || text.trim().length < 10) {
@@ -19,6 +36,7 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+
 
     // Truncate very long documents to keep token usage reasonable
     const trimmed = text.slice(0, 60000);

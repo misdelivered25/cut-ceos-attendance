@@ -45,34 +45,58 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
 
-    const { session_id, name, phone, email, student_id } = await req.json();
+    const { qr_token, name, phone, email, student_id } = await req.json();
 
-    if (!session_id || !name || !phone || !student_id || !email) {
+    if (!qr_token || !name || !phone || !student_id || !email) {
       return new Response(
-        JSON.stringify({ error: 'Full name, Student ID, phone, and email are required' }),
+        JSON.stringify({ error: 'QR token, full name, Student ID, phone, and email are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Resolve session strictly via QR token (never trust client-supplied session_id)
+    const { data: session, error: sessionErr } = await supabase
+      .from('sessions')
+      .select('id, is_active, start_time, end_time, time_limit_enabled, created_by')
+      .eq('qr_token', String(qr_token))
+      .maybeSingle();
+
+    if (sessionErr || !session) {
+      return new Response(JSON.stringify({ error: 'Invalid QR code' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const now = Date.now();
+    const isExpired = session.time_limit_enabled && session.end_time && now > new Date(session.end_time).getTime();
+    const hasNotStarted = session.time_limit_enabled && session.start_time && now < new Date(session.start_time).getTime();
+    if (!session.is_active || isExpired || hasNotStarted) {
+      return new Response(JSON.stringify({ error: 'Session is not currently accepting attendance' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    const session_id = session.id;
     const trimmedName = String(name).trim();
     const trimmedPhone = String(phone).trim();
     const trimmedEmail = String(email).trim().toLowerCase();
     const trimmedStudentId = String(student_id).trim();
 
-    if (trimmedName.length > 100) {
-      return new Response(JSON.stringify({ error: 'Name is too long' }),
+    if (trimmedName.length < 1 || trimmedName.length > 100) {
+      return new Response(JSON.stringify({ error: 'Invalid name length' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (trimmedPhone.length < 10 || trimmedPhone.length > 15) {
-      return new Response(JSON.stringify({ error: 'Invalid phone number length' }),
+    if (!/^[0-9+\-\s()]{10,15}$/.test(trimmedPhone)) {
+      return new Response(JSON.stringify({ error: 'Invalid phone number' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-    if (!/^\S+@\S+\.\S+$/.test(trimmedEmail)) {
+    if (!/^\S+@\S+\.\S+$/.test(trimmedEmail) || trimmedEmail.length > 254) {
       return new Response(JSON.stringify({ error: 'Invalid email address' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+    if (trimmedStudentId.length < 1 || trimmedStudentId.length > 50) {
+      return new Response(JSON.stringify({ error: 'Invalid Student ID' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
 
-    // Duplicate check scoped to this session: student_id OR email OR phone
     const { data: dupes, error: dupErr } = await supabase
       .from('attendees')
       .select('id, student_id, email, phone')
@@ -97,10 +121,6 @@ serve(async (req) => {
     const ip_address = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
                        req.headers.get('x-real-ip') || 'unknown';
 
-    // Member matching (kept from prior behavior)
-    const { data: sessionRow } = await supabase
-      .from('sessions').select('created_by').eq('id', session_id).maybeSingle();
-
     let member_id: string | null = null;
     let match_method: string | null = null;
 
@@ -108,17 +128,17 @@ serve(async (req) => {
       .from('members').select('id').eq('phone', trimmedPhone).eq('is_active', true).maybeSingle();
     if (phoneMember) { member_id = phoneMember.id; match_method = 'phone'; }
 
-    if (!member_id && trimmedEmail && sessionRow?.created_by) {
+    if (!member_id && trimmedEmail && session.created_by) {
       const { data: emailMember } = await supabase
         .from('members').select('id').ilike('email', trimmedEmail)
-        .eq('created_by', sessionRow.created_by).eq('is_active', true).maybeSingle();
+        .eq('created_by', session.created_by).eq('is_active', true).maybeSingle();
       if (emailMember) { member_id = emailMember.id; match_method = 'email'; }
     }
 
-    if (!member_id && sessionRow?.created_by) {
+    if (!member_id && session.created_by) {
       const { data: candidates } = await supabase
         .from('members').select('id, full_name')
-        .eq('created_by', sessionRow.created_by).eq('is_active', true);
+        .eq('created_by', session.created_by).eq('is_active', true);
       if (candidates && candidates.length) {
         const target = normalizeName(trimmedName);
         let best: { id: string; score: number } | null = null;

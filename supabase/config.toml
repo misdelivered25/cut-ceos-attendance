@@ -2,3 +2,12 @@ project_id = "ftzyfdfpyztvgpqqupyu"
 
 [functions.mark-attendance]
 verify_jwt = false
+
+[functions.analyze-import-data]
+verify_jwt = true
+
+[functions.extract-minutes]
+verify_jwt = true
+
+[functions.send-notification]
+verify_jwt = true
