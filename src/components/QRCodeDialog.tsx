@@ -93,12 +93,9 @@ export const QRCodeDialog = ({ open, onOpenChange, session }: QRCodeDialogProps)
     img.src = "data:image/svg+xml;base64," + btoa(svgData);
   };
 
-  const handleWhatsAppShare = () => {
-    const msg = encodeURIComponent(
-      `📋 *${session.title}*\nMark your attendance here:\n${attendanceUrl}`
-    );
-    window.open(`https://wa.me/?text=${msg}`, "_blank");
-  };
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
+    `📋 *${session.title}*\nMark your attendance here:\n${attendanceUrl}`
+  )}`;
 
   const handlePrint = () => {
     const svg = document.getElementById("qr-code-svg");
