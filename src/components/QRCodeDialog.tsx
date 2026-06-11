@@ -28,7 +28,8 @@ interface QRCodeDialogProps {
 }
 
 export const QRCodeDialog = ({ open, onOpenChange, session }: QRCodeDialogProps) => {
-  const attendanceUrl = `${window.location.origin}/scan/${session.qr_token}`;
+  const PUBLIC_APP_URL = import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin;
+  const attendanceUrl = `${String(PUBLIC_APP_URL).replace(/\/$/, "")}/scan/${session.qr_token}`;
   const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   // Live attendee count — refreshes every 5 seconds while dialog is open
