@@ -1,4 +1,5 @@
 import imiLogo from "@/assets/imi-logo.png";
+import { MessageCircle } from "lucide-react";
 
 const Footer = () => {
   return (
