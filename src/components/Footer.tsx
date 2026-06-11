@@ -13,7 +13,18 @@ const Footer = () => {
             </p>
           </div>
 
+          <a
+            href="https://wa.me/263785693657?text=Hello%20IMI%20Technologies"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-md bg-green-500 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-600 transition-colors"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            Contact on WhatsApp
+          </a>
+
           <div className="pt-3 border-t w-full">
+
             <p className="text-xs text-muted-foreground">
               © {new Date().getFullYear()} IMI Technologies. All rights reserved.
             </p>
