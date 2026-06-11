@@ -51,13 +51,14 @@ const Scan = () => {
 
       const { data: result, error } = await supabase.functions.invoke('mark-attendance', {
         body: {
-          session_id: session?.id,
+          qr_token: token,
           name: data.name,
           student_id: data.student_id,
           phone: data.phone,
           email: data.email,
         },
       });
+
 
       if (error) {
         throw new Error(error.message || "Failed to mark attendance");
