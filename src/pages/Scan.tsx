@@ -31,12 +31,21 @@ const Scan = () => {
   const { data: session, isLoading: sessionLoading } = useQuery({
     queryKey: ["session", token],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("get_session_by_qr_token", { _token: token! });
+      console.log("[Scan] Received token from URL:", token);
 
-      if (error) throw error;
-      const row = Array.isArray(data) ? data[0] : data;
-      return row ?? null;
+      const { data, error } = await supabase
+        .from("sessions")
+        .select("id, title, is_active, mode, start_time, end_time, time_limit_enabled, qr_token")
+        .eq("qr_token", token!)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[Scan] Session lookup error:", error);
+        throw error;
+      }
+
+      console.log("[Scan] Session lookup result:", data);
+      return data;
     },
     enabled: !!token,
   });
