@@ -32,16 +32,15 @@ const Scan = () => {
     queryKey: ["session", token],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("sessions")
-        .select("*")
-        .eq("qr_token", token)
-        .single();
+        .rpc("get_session_by_qr_token", { _token: token! });
 
       if (error) throw error;
-      return data;
+      const row = Array.isArray(data) ? data[0] : data;
+      return row ?? null;
     },
     enabled: !!token,
   });
+
 
   const submitAttendance = useMutation({
     mutationFn: async (data: { name: string; student_id: string; phone: string; email: string }) => {
@@ -52,13 +51,14 @@ const Scan = () => {
 
       const { data: result, error } = await supabase.functions.invoke('mark-attendance', {
         body: {
-          session_id: session?.id,
+          qr_token: token,
           name: data.name,
           student_id: data.student_id,
           phone: data.phone,
           email: data.email,
         },
       });
+
 
       if (error) {
         throw new Error(error.message || "Failed to mark attendance");

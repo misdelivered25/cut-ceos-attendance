@@ -9,9 +9,31 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Require authenticated caller to prevent AI credit abuse
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.38.4");
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: userData, error: userErr } = await adminClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const { members } = await req.json();
+    if (!Array.isArray(members) || members.length === 0 || members.length > 500) {
+      return new Response(JSON.stringify({ error: "Invalid members payload (1-500 rows)" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
 
     const prompt = `You are a data cleaning assistant for a university club member database. Analyze and correct the following member data. Each member needs: full_name, phone, email, program, department.
 

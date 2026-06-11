@@ -208,14 +208,55 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       generate_member_id: { Args: never; Returns: string }
+      get_session_by_qr_token: {
+        Args: { _token: string }
+        Returns: {
+          end_time: string
+          id: string
+          is_active: boolean
+          mode: Database["public"]["Enums"]["session_mode"]
+          start_time: string
+          time_limit_enabled: boolean
+          title: string
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       session_mode: "timed" | "open"
     }
     CompositeTypes: {
@@ -344,6 +385,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       session_mode: ["timed", "open"],
     },
   },
