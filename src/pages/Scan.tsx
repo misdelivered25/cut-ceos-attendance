@@ -35,9 +35,7 @@ const Scan = () => {
       console.log("[Scan] Received token from URL:", token);
 
       const { data, error } = await supabase
-        .from("sessions")
-        .select("id, title, is_active, mode, start_time, end_time, time_limit_enabled, qr_token")
-        .eq("qr_token", token!)
+        .rpc("get_session_by_qr_token", { _token: token! })
         .maybeSingle();
 
       if (error) {
