@@ -231,7 +231,7 @@ const Scan = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  the same  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
