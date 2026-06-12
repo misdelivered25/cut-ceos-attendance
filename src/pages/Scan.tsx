@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle2, Loader2, Clock, Users } from "lucide-react";
+import Footer from "@/components/Footer";
 import { z } from "zod";
 import logo from "@/assets/cut-ceos-logo.png";
 
