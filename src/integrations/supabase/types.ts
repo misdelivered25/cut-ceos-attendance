@@ -186,7 +186,7 @@ export type Database = {
           notification_email?: string | null
           notification_sent?: boolean
           notification_threshold?: number | null
-          qr_token: string
+          qr_token?: string
           start_time?: string
           time_limit_enabled?: boolean
           title: string

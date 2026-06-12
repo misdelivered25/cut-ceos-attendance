@@ -35,7 +35,9 @@ const Scan = () => {
       console.log("[Scan] Received token from URL:", token);
 
       const { data, error } = await supabase
-        .rpc("get_session_by_qr_token", { _token: token! })
+        .from("sessions")
+        .select("*")
+        .eq("qr_token", token!)
         .maybeSingle();
 
       if (error) {
@@ -98,9 +100,9 @@ const Scan = () => {
 
   // Check if session is closed or expired based on time_limit_enabled
   const now = new Date();
-  const isTimeLimitEnabled = session.time_limit_enabled;
-  const isExpired = isTimeLimitEnabled && session.end_time && now > new Date(session.end_time);
-  const hasNotStarted = isTimeLimitEnabled && session.start_time && now < new Date(session.start_time);
+  const isTimeLimitEnabled = session?.time_limit_enabled;
+  const isExpired = isTimeLimitEnabled && session?.end_time && now > new Date(session.end_time);
+  const hasNotStarted = isTimeLimitEnabled && session?.start_time && now < new Date(session.start_time);
 
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
