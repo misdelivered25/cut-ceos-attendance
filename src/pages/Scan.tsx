@@ -188,7 +188,7 @@ const Scan = () => {
                 <CardTitle className="text-2xl">{session.title}</CardTitle>
                 <div className="flex justify-center mt-2">
                   <Badge variant={(session.mode as "timed" | "open") === "timed" ? "default" : "secondary"} className="gap-1">
-                    {sessionMode === "timed" ? (
+                    {(session.mode as "timed" | "open") === "timed" ? (
                       <>
                         <Clock className="h-3 w-3" />
                         Timed Check-in
