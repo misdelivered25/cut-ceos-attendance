@@ -104,8 +104,6 @@ const Scan = () => {
   const isExpired = isTimeLimitEnabled && session.end_time && now > new Date(session.end_time);
   const hasNotStarted = isTimeLimitEnabled && session.start_time && now < new Date(session.start_time);
 
-  const sessionMode = session.mode as "timed" | "open";
-
   return (
     <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top_right,hsl(var(--muted)),hsl(var(--background)))]">
       <div className="flex flex-1 items-center justify-center p-4">
