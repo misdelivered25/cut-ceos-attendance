@@ -1,0 +1,1 @@
+DROP FUNCTION IF EXISTS public.get_session_by_qr_token(text);

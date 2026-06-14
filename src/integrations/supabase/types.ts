@@ -235,18 +235,6 @@ export type Database = {
     }
     Functions: {
       generate_member_id: { Args: never; Returns: string }
-      get_session_by_qr_token: {
-        Args: { _token: string }
-        Returns: {
-          end_time: string
-          id: string
-          is_active: boolean
-          mode: Database["public"]["Enums"]["session_mode"]
-          start_time: string
-          time_limit_enabled: boolean
-          title: string
-        }[]
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
