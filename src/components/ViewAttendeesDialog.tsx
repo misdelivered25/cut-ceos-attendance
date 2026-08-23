@@ -106,7 +106,9 @@ export const ViewAttendeesDialog = ({
     const exportData = attendees.map((attendee, index) => ({
       "#": index + 1,
       Name: attendee.name,
+      "Student ID": attendee.student_id || "N/A",
       Phone: attendee.phone,
+      Email: attendee.email || "N/A",
       "Member ID": attendee.member?.member_id || "N/A",
       "Submission Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
       "IP Address": attendee.ip_address || "N/A",
@@ -172,6 +174,7 @@ export const ViewAttendeesDialog = ({
     const tableData = attendees.map((attendee, index) => [
       index + 1,
       attendee.name,
+      attendee.student_id || "N/A",
       attendee.phone,
       attendee.member?.member_id || "N/A",
       format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
@@ -179,7 +182,7 @@ export const ViewAttendeesDialog = ({
 
     autoTable(doc, {
       startY: 68,
-      head: [["#", "Name", "Phone", "Member ID", "Submission Time"]],
+      head: [["#", "Name", "Student ID", "Phone", "Member ID", "Submission Time"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
