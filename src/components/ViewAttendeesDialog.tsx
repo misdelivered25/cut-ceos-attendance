@@ -56,15 +56,12 @@ export const ViewAttendeesDialog = ({
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: attendees, isLoading, refetch } = useQuery({
+  const { data: attendees, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["attendees", sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendees")
-        .select(`
-          *,
-          member:members(id, member_id, full_name)
-        `)
+        .select("*")
         .eq("session_id", sessionId)
         .order("scanned_at", { ascending: false });
 
@@ -109,7 +106,7 @@ export const ViewAttendeesDialog = ({
       "Student ID": attendee.student_id || "N/A",
       Phone: attendee.phone,
       Email: attendee.email || "N/A",
-      "Member ID": attendee.member?.member_id || "N/A",
+      "Linked Member": attendee.member_id ? "Yes" : "No",
       "Submission Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
       "IP Address": attendee.ip_address || "N/A",
     }));
@@ -176,13 +173,13 @@ export const ViewAttendeesDialog = ({
       attendee.name,
       attendee.student_id || "N/A",
       attendee.phone,
-      attendee.member?.member_id || "N/A",
+      attendee.member_id ? "Yes" : "No",
       format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
     ]);
 
     autoTable(doc, {
       startY: 68,
-      head: [["#", "Name", "Student ID", "Phone", "Member ID", "Submission Time"]],
+      head: [["#", "Name", "Student ID", "Phone", "Linked Member", "Submission Time"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
@@ -305,6 +302,16 @@ export const ViewAttendeesDialog = ({
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
+            ) : isError ? (
+              <div className="space-y-3 py-8 text-center">
+                <p className="font-medium text-destructive">Attendance records could not be loaded</p>
+                <p className="text-sm text-muted-foreground">
+                  {error instanceof Error ? error.message : "Please try again."}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Try Again
+                </Button>
+              </div>
             ) : attendees && attendees.length > 0 ? (
               <div className="flex-1 overflow-auto rounded-md border">
                 <Table>
@@ -340,10 +347,10 @@ export const ViewAttendeesDialog = ({
                           </TableCell>
                           <TableCell>{attendee.phone}</TableCell>
                           <TableCell>
-                            {attendee.member ? (
+                            {attendee.member_id ? (
                               <Badge variant="secondary" className="gap-1">
                                 <UserCheck className="h-3 w-3" />
-                                {attendee.member.member_id}
+                                Linked
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground text-sm">—</span>

@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788856488542,
+      "tag": "0000_restore_attendee_owner_access",
+      "breakpoints": true
+    }
+  ]
+}
