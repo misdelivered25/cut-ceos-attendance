@@ -56,7 +56,7 @@ export const ViewAttendeesDialog = ({
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
 
-  const { data: attendees, isLoading, refetch } = useQuery({
+  const { data: attendees, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["attendees", sessionId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -304,6 +304,16 @@ export const ViewAttendeesDialog = ({
             {isLoading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : isError ? (
+              <div className="space-y-3 py-8 text-center">
+                <p className="font-medium text-destructive">Attendance records could not be loaded</p>
+                <p className="text-sm text-muted-foreground">
+                  {error instanceof Error ? error.message : "Please try again."}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => refetch()}>
+                  Try Again
+                </Button>
               </div>
             ) : attendees && attendees.length > 0 ? (
               <div className="flex-1 overflow-auto rounded-md border">
