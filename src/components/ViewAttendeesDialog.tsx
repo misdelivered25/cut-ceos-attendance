@@ -347,7 +347,7 @@ export const ViewAttendeesDialog = ({
                           </TableCell>
                           <TableCell>{attendee.phone}</TableCell>
                           <TableCell>
-                            {attendee.member ? (
+                            {attendee.member_id ? (
                               <Badge variant="secondary" className="gap-1">
                                 <UserCheck className="h-3 w-3" />
                                 Linked
