@@ -61,10 +61,7 @@ export const ViewAttendeesDialog = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendees")
-        .select(`
-          *,
-          member:members(id, member_id, full_name)
-        `)
+        .select("*")
         .eq("session_id", sessionId)
         .order("scanned_at", { ascending: false });
 
@@ -109,7 +106,7 @@ export const ViewAttendeesDialog = ({
       "Student ID": attendee.student_id || "N/A",
       Phone: attendee.phone,
       Email: attendee.email || "N/A",
-      "Member ID": attendee.member?.member_id || "N/A",
+      "Linked Member": attendee.member_id ? "Yes" : "No",
       "Submission Time": format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
       "IP Address": attendee.ip_address || "N/A",
     }));
@@ -176,13 +173,13 @@ export const ViewAttendeesDialog = ({
       attendee.name,
       attendee.student_id || "N/A",
       attendee.phone,
-      attendee.member?.member_id || "N/A",
+      attendee.member_id ? "Yes" : "No",
       format(new Date(attendee.scanned_at), "MMM d, yyyy h:mm a"),
     ]);
 
     autoTable(doc, {
       startY: 68,
-      head: [["#", "Name", "Student ID", "Phone", "Member ID", "Submission Time"]],
+      head: [["#", "Name", "Student ID", "Phone", "Linked Member", "Submission Time"]],
       body: tableData,
       theme: "striped",
       headStyles: { fillColor: [59, 130, 246] },
@@ -353,7 +350,7 @@ export const ViewAttendeesDialog = ({
                             {attendee.member ? (
                               <Badge variant="secondary" className="gap-1">
                                 <UserCheck className="h-3 w-3" />
-                                {attendee.member.member_id}
+                                Linked
                               </Badge>
                             ) : (
                               <span className="text-muted-foreground text-sm">—</span>
