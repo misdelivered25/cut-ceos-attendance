@@ -19,12 +19,6 @@ const Auth = () => {
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
@@ -76,7 +70,14 @@ const Auth = () => {
             <Home className="h-5 w-5" />
             Back to Home
           </Button>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            {user && (
+              <Button variant="outline" onClick={() => navigate("/dashboard")}>
+                Back to Dashboard
+              </Button>
+            )}
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <div className="flex flex-1 items-center justify-center p-4">

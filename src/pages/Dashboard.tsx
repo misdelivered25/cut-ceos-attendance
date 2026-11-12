@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, LogOut, Home, Users, Calendar, BarChart3, TrendingUp, FileText, LayoutDashboard } from "lucide-react";
+import { Plus, LogIn, LogOut, Home, Users, Calendar, BarChart3, TrendingUp, FileText, LayoutDashboard } from "lucide-react";
 import { AnalyticsTab } from "@/components/AnalyticsTab";
 import { SessionsList } from "@/components/SessionsList";
 import { CreateSessionDialog } from "@/components/CreateSessionDialog";
@@ -25,7 +25,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-dots flex flex-col">
       <header className="border-b bg-ambient/70 backdrop-blur-md shadow-sm">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+        <div className="container mx-auto flex flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate("/")}>
             <img src={logo} alt="CUT CEOS" className="h-12 w-12 object-contain" />
             <div>
@@ -33,11 +33,15 @@ const Dashboard = () => {
               <p className="text-sm text-muted-foreground">{user?.email}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <ThemeToggle />
             <Button onClick={() => navigate("/")} variant="ghost" size="sm">
               <Home className="mr-2 h-4 w-4" />
               Home
+            </Button>
+            <Button onClick={() => navigate("/auth")} variant="outline" size="sm">
+              <LogIn className="mr-2 h-4 w-4" />
+              Authentication
             </Button>
             <Button onClick={signOut} variant="outline" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
